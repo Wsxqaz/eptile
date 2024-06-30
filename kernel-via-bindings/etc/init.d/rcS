@@ -1,0 +1,2 @@
+mkdir -p /proc
+mount -t proc none /proc
