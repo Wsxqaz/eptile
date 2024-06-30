@@ -17,3 +17,11 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+# Kernel module build directory
+modules.order
+Module.symvers
+*.mod.c
+*.mod
+*.o
+*.ko
