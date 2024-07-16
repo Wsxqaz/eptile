@@ -1,1 +1,2 @@
 obj-m := rust_hello.o
+lib-y := bindings_generated.o bindings_helpers_generated.o

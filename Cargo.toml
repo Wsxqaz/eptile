@@ -2,5 +2,5 @@
 
 members = [
     "user",
-    "kernel",
+    "kernel", "hook",
 ]

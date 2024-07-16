@@ -1,6 +1,6 @@
-FROM fedora-busybox-build as busybox
+FROM localhost/fedora-busybox-build:latest as busybox
 
-FROM fedora-kern-build as kernel
+FROM localhost/fedora-kernel-build:latest as kernel
 
 RUN dnf install -y qemu
 
@@ -10,12 +10,12 @@ COPY . /build
 WORKDIR /build
 RUN make LLVM=1 KDIR=/linux
 
-
 RUN mkdir /busybox-install/modules
 RUN cp *.ko /busybox-install/modules
 COPY etc /busybox-install/etc
 
 WORKDIR /busybox-install
+
 RUN find . | cpio -H newc -o | gzip > ramdisk.img
 
 WORKDIR /kernel-test
