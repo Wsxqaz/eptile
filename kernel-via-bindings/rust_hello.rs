@@ -76,102 +76,15 @@ impl kernel::Module for RustHello {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         unsafe {
             let _printk: unsafe extern "C" fn(*const c_char, ...) -> c_int = core::mem::transmute(0xffffffff849b03b0 as usize);
+            let _fget: unsafe extern "C" fn(u32) -> *mut file = core::mem::transmute(0xffffffff84d128d0 as usize);
+
+            let tp_id: u32 = 766;
+            let event_file: *mut file = _fget(tp_id);
+            let event: *mut perf_event = core::mem::transmute((*event_file).private_data);
+
+
             // _printk("[rust_hello] console_printkool %d\n".as_ptr() as *const i8, 42u32);
 
-            let _bpf_trace_modules_next: *const u8 = core::mem::transmute(0xffffffff86e08140 as usize);
-            // _printk("[rust_hello] _bpf_trace_modules_next: %px\n".as_ptr() as *const i8, _bpf_trace_modules_next);
-            let mut btm: *const bpf_trace_module = container_of!(_bpf_trace_modules_next, bpf_trace_module, list);
-            let mut l = 0;
-            let mut seen = [0 as *const bpf_trace_module; 100];
-            // _printk("[rust_hello] start btm = %px\n".as_ptr() as *const i8, btm);
-            let mut btp: *const bpf_raw_event_map = core::mem::transmute(0xffffffff8703bec0 as usize);
-            let mut end: *const bpf_raw_event_map = core::mem::transmute(0xffffffff870434c0 as usize);
-            while btp < end {
-                let tp: *mut tracepoint = (*btp).tp;
-                if tp == core::ptr::null_mut() { continue; }
-
-                let mut buff = [0u8; 128];
-                let mut pfxx = "[rust_hello] btp->tp->name: ".as_bytes();
-                for j in 0..pfxx.len() {
-                    buff[j] = pfxx[j as usize];
-                }
-                let mut cc = (*tp).name;
-                let mut ci = 0;
-                while *cc != 0i8 {
-                    buff[ci + pfxx.len()] = *cc as u8;
-                    ci = ci + 1;
-                    cc = cc.add(1);
-                    if (pfxx.len() + ci > buff.len() - 1) { break; }
-                }
-                _printk(buff.as_ptr() as *const i8);
-
-                let mut sys_enter = true;
-                let reff = "sys_enter".as_bytes();
-                for k in 0..9 {
-                    if (buff[pfxx.len() + k] == reff[k]) { continue; }
-                    else {
-                        sys_enter = false;
-                        break;
-                    }
-                }
-
-                if sys_enter {
-                    _printk("[rust_hello] sys_enter found...\n".as_ptr() as *const i8);
-                    let bpf_func = (*btp).bpf_func;
-                    _printk("[rust_hello] tp->bpf_func: %px\n".as_ptr() as *const i8, bpf_func);
-                }
-
-                btp = btp.add(1);
-            }
-            // while btp < end {
-            //     let mut buf = [2u8; 128];
-            //     let mut pfx = "[rust_hello] btm->module->name: ".as_bytes();
-            //     for i in 0..pfx.len() {
-            //         buf[i] = pfx[i as usize];
-            //     }
-            //     for i in 0..56 {
-            //         buf[i as usize + pfx.len() as usize] = (*(*btm).module).name[i] as u8;
-            //     }
-            //     _printk(buf.as_ptr() as *const i8);
-            //     let num_bpf_raw_events = (*(*btm).module).num_bpf_raw_events;
-            //     _printk("[rust_hello] btm->module->num_bpf_raw_events: %u\n".as_ptr() as *const i8, num_bpf_raw_events);
-            //     if (num_bpf_raw_events > 200) {
-            //         _printk("[rust_hello] skipping invalid event\n".as_ptr() as *const i8);
-            //         btm = container_of!((*btm).list.next, bpf_trace_module, list);
-            //         continue;
-            //     }
-
-            //     let mut bpf_raw_event_map: *mut bpf_raw_event_map = (*(*btm).module).bpf_raw_events;
-            //     for i in 1..num_bpf_raw_events {
-            //         if bpf_raw_event_map == core::ptr::null_mut() { continue; }
-
-            //         let tp: *mut tracepoint = (*bpf_raw_event_map).tp;
-            //         if tp == core::ptr::null_mut() { continue; }
-            //         let bpf_func: *mut core::ffi::c_void = (*bpf_raw_event_map).bpf_func;
-
-            //         let mut buff = [0u8; 128];
-            //         let mut pfxx = "[rust_hello] tp->name: ".as_bytes();
-            //         for j in 0..pfxx.len() {
-            //             buff[j] = pfxx[j as usize];
-            //         }
-            //         let mut cc = (*tp).name;
-            //         let mut ci = 0;
-            //         while *cc != 0i8 {
-            //             buff[ci + pfxx.len()] = *cc as u8;
-            //             ci = ci + 1;
-            //             cc = cc.add(1);
-            //             if (pfxx.len() + ci > buff.len() - 1) { break; }
-            //         }
-            //         _printk(buff.as_ptr() as *const i8);
-            //         bpf_raw_event_map = bpf_raw_event_map.add(1);
-            //     }
-
-
-            //     btm = container_of!((*btm).list.next, bpf_trace_module, list);
-            //     //  _printk("[rust_hello] next btm = %px\n".as_ptr() as *const i8, btm);
-            //     l = l + 1;
-            //     if l > 200 { break; }
-            // }
         }
 
         Ok(RustHello {})
@@ -181,5 +94,55 @@ impl kernel::Module for RustHello {
 impl Drop for RustHello {
     fn drop(&mut self) {
         // pr_info!("Hello exit!\n");
+    }
+}
+
+fn bpf_get_raw_tracepoint_module() {
+    unsafe {
+    let _bpf_trace_modules_next: *const u8 = core::mem::transmute(0xffffffff86e08140 as usize);
+    // _printk("[rust_hello] _bpf_trace_modules_next: %px\n".as_ptr() as *const i8, _bpf_trace_modules_next);
+    let mut btm: *const bpf_trace_module = container_of!(_bpf_trace_modules_next, bpf_trace_module, list);
+    let mut l = 0;
+    let mut seen = [0 as *const bpf_trace_module; 100];
+    // _printk("[rust_hello] start btm = %px\n".as_ptr() as *const i8, btm);
+    let mut btp: *const bpf_raw_event_map = core::mem::transmute(0xffffffff8703bec0 as usize);
+    let mut end: *const bpf_raw_event_map = core::mem::transmute(0xffffffff870434c0 as usize);
+        while btp < end {
+            let tp: *mut tracepoint = (*btp).tp;
+            if tp == core::ptr::null_mut() { continue; }
+
+            let mut buff = [0u8; 128];
+            let mut pfxx = "[rust_hello] btp->tp->name: ".as_bytes();
+            for j in 0..pfxx.len() {
+                buff[j] = pfxx[j as usize];
+            }
+            let mut cc = (*tp).name;
+            let mut ci = 0;
+            while *cc != 0i8 {
+                buff[ci + pfxx.len()] = *cc as u8;
+                ci = ci + 1;
+                cc = cc.add(1);
+                if (pfxx.len() + ci > buff.len() - 1) { break; }
+            }
+            _printk(buff.as_ptr() as *const i8);
+
+            let mut sys_enter = true;
+            let reff = "sys_enter".as_bytes();
+            for k in 0..9 {
+                if (buff[pfxx.len() + k] == reff[k]) { continue; }
+                else {
+                    sys_enter = false;
+                    break;
+                }
+            }
+
+            if sys_enter {
+                _printk("[rust_hello] sys_enter found...\n".as_ptr() as *const i8);
+                let bpf_func = (*btp).bpf_func;
+                _printk("[rust_hello] tp->bpf_func: %px\n".as_ptr() as *const i8, bpf_func);
+            }
+
+            btp = btp.add(1);
+        }
     }
 }
