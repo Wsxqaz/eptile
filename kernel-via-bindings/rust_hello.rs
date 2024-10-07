@@ -2,9 +2,10 @@
 #![allow(unreachable_pub)]
 #![allow(warnings)]
 
-//! Rust hello.
-
+use core::arch::asm;
 use core::ffi::*;
+use core::*;
+use core::mem::MaybeUninit;
 use kernel::prelude::*;
 use kernel::print::call_printk;
 
@@ -69,17 +70,55 @@ pub struct bpf_trace_module {
     pub list: list_head,
 }
 
+#[no_mangle]
+extern "C" {
+    fn _printk(s: *const c_char, ...) -> c_int;
+    fn stop_machine(
+        _fn: fn(arg: *mut c_void) -> c_int,
+        data: *mut c_void,
+        cpus: *mut cpumask
+    ) -> c_int;
+    static __per_cpu_offset: usize;
+}
+
 impl kernel::Module for RustHello {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         unsafe {
-            let _printk: unsafe extern "C" fn(*const c_char, ...) -> c_int =
-                core::mem::transmute(0xffffffff849b03b0 as usize);
-            let _fget: unsafe extern "C" fn(u32) -> *mut file =
-                core::mem::transmute(0xffffffff84d128d0 as usize);
 
-            let tp_id: u32 = 766;
-            let event_file: *mut file = _fget(tp_id);
-            let event: *mut perf_event = core::mem::transmute((*event_file).private_data);
+            // let pmu_idr: *mut idr = core::mem::transmute(0xffffffffa48a8c90usize);
+            // _printk("[rust_hello] pmu_idr.idr_base: %u\n".as_ptr() as *const i8, (* pmu_idr ).idr_base);
+            // _printk("[rust_hello] pmu_idr.idr_next: %u\n".as_ptr() as *const i8, (* pmu_idr ).idr_next);
+            // _printk(
+            //     "[rust_hello] pmu_idr.idr_rt.xa_lock.rlock.raw_lock.__bindgen_anon_1.val: %d\n".as_ptr() as *const i8,
+            //     (* pmu_idr ).idr_rt.xa_lock.rlock.raw_lock.__bindgen_anon_1.val.counter
+            // );
+            // let pmu: *mut pmu = idr_find(pmu_idr, perf_type_id_PERF_TYPE_TRACEPOINT.into()) as *mut _;
+            // _printk("[rust_hello] pmu: %px\n".as_ptr() as *const i8, pmu);
+
+            let perf_cpu_context: usize = 0x000000000002fd20;
+            _printk(
+                "[rust_hello] perf_cpu_context: %px\n".as_ptr() as *const i8,
+                perf_cpu_context
+            );
+            _printk(
+                "[rust_hello] __per_cpu_offset: %px\n".as_ptr() as *const i8,
+                __per_cpu_offset
+            );
+
+            let this_cpu_off: usize = 0x0000000000019a20;
+            _printk(
+                "[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8,
+                this_cpu_off
+            );
+
+            let cpuctx: *const perf_cpu_context = perf_cpu_context.wrapping_add(__per_cpu_offset) as _;
+            _printk(
+                "[rust_hello] cpuctx: %px\n".as_ptr() as *const i8,
+                cpuctx
+            );
+
+            let taskctx: *const perf_event_context = (*cpuctx).task_ctx;
+
         }
 
         Ok(RustHello {})
