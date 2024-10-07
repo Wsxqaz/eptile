@@ -98,11 +98,15 @@ impl<T> __IncompleteArrayField<T> {
     }
     #[inline]
     pub unsafe fn as_slice(&self, len: usize) -> &[T] {
-        unsafe { ::core::slice::from_raw_parts(self.as_ptr(), len) }
+        unsafe {
+            ::core::slice::from_raw_parts(self.as_ptr(), len)
+        }
     }
     #[inline]
     pub unsafe fn as_mut_slice(&mut self, len: usize) -> &mut [T] {
-        unsafe { ::core::slice::from_raw_parts_mut(self.as_mut_ptr(), len) }
+        unsafe {
+            ::core::slice::from_raw_parts_mut(self.as_mut_ptr(), len)
+        }
     }
 }
 impl<T> ::core::fmt::Debug for __IncompleteArrayField<T> {
@@ -119,11 +123,15 @@ impl<T> __BindgenUnionField<T> {
     }
     #[inline]
     pub unsafe fn as_ref(&self) -> &T {
-        unsafe { ::core::mem::transmute(self) }
+        unsafe {
+            ::core::mem::transmute(self)
+        }
     }
     #[inline]
     pub unsafe fn as_mut(&mut self) -> &mut T {
-        unsafe { ::core::mem::transmute(self) }
+        unsafe {
+            ::core::mem::transmute(self)
+        }
     }
 }
 impl<T> ::core::default::Default for __BindgenUnionField<T> {
@@ -17587,6 +17595,35 @@ pub const PERF_SECURITY_CPU: u32 = 1;
 pub const PERF_SECURITY_KERNEL: u32 = 2;
 pub const PERF_SECURITY_TRACEPOINT: u32 = 3;
 pub const PERF_SECURITY_MAX: u32 = 4;
+pub const POLLIN: u32 = 1;
+pub const POLLPRI: u32 = 2;
+pub const POLLOUT: u32 = 4;
+pub const POLLERR: u32 = 8;
+pub const POLLHUP: u32 = 16;
+pub const POLLNVAL: u32 = 32;
+pub const POLLRDNORM: u32 = 64;
+pub const POLLRDBAND: u32 = 128;
+pub const POLLWRNORM: u32 = 256;
+pub const POLLWRBAND: u32 = 512;
+pub const POLLMSG: u32 = 1024;
+pub const POLLREMOVE: u32 = 4096;
+pub const POLLRDHUP: u32 = 8192;
+pub const EPOLL_CLOEXEC: u32 = 524288;
+pub const EPOLL_CTL_ADD: u32 = 1;
+pub const EPOLL_CTL_DEL: u32 = 2;
+pub const EPOLL_CTL_MOD: u32 = 3;
+pub const MAX_STACK_ALLOC: u32 = 832;
+pub const FRONTEND_STACK_ALLOC: u32 = 256;
+pub const SELECT_STACK_ALLOC: u32 = 256;
+pub const POLL_STACK_ALLOC: u32 = 256;
+pub const WQUEUES_STACK_ALLOC: u32 = 576;
+pub const RING_BUFFER_ALL_CPUS: i32 = -1;
+pub const TRACE_SEQ_SIZE: u32 = 8192;
+pub const TRACEPOINT_DEFAULT_PRIO: u32 = 10;
+pub const MAX_DYNEVENT_CMD_LEN: u32 = 2048;
+pub const PERF_MAX_TRACE_SIZE: u32 = 8192;
+pub const MAX_FILTER_STR_VAL: u32 = 256;
+pub const TRACE_EVENT_STR_MAX: u32 = 512;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ftrace_branch_data {
@@ -19229,9 +19266,9 @@ extern "C" {
 extern "C" {
     pub fn setup_per_cpu_areas();
 }
-extern "C" {
-    pub static mut this_cpu_off: core::ffi::c_ulong;
-}
+// extern "C" {
+//     pub static mut this_cpu_off: core::ffi::c_ulong;
+// }
 #[repr(C)]
 #[derive(Default)]
 pub struct sysinfo {
@@ -22492,11 +22529,6 @@ impl Default for class_irqsave_t {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct timespec {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct pollfd {
     _unused: [u8; 0],
 }
 pub const timespec_type_TT_NONE: timespec_type = 0;
@@ -38176,7 +38208,7 @@ pub type xa_lock_type = core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct xarray {
-    pub xa_lock: spinlock_t,
+    pub xa_lock: spinlock__bindgen_ty_1,
     pub xa_flags: gfp_t,
     pub xa_head: *mut core::ffi::c_void,
 }
@@ -43150,11 +43182,6 @@ pub struct hd_geometry {
 }
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct poll_table_struct {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
 pub struct kstatfs {
     _unused: [u8; 0],
 }
@@ -47255,11 +47282,6 @@ extern "C" {
         addr: compat_ulong_t,
         data: compat_ulong_t,
     ) -> core::ffi::c_long;
-}
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct epoll_event {
-    _unused: [u8; 0],
 }
 extern "C" {
     pub fn compat_restore_altstack(uss: *const compat_stack_t) -> core::ffi::c_int;
@@ -80365,6 +80387,1777 @@ extern "C" {
         arg2: core::ffi::c_uint,
     ) -> core::ffi::c_int;
 }
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct pollfd {
+    pub fd: core::ffi::c_int,
+    pub events: core::ffi::c_short,
+    pub revents: core::ffi::c_short,
+}
+#[repr(C, packed)]
+#[derive(Default, Copy, Clone)]
+pub struct epoll_event {
+    pub events: __poll_t,
+    pub data: __u64,
+}
+pub type poll_queue_proc = ::core::option::Option<
+    unsafe extern "C" fn(
+        arg1: *mut file,
+        arg2: *mut wait_queue_head_t,
+        arg3: *mut poll_table_struct,
+    ),
+>;
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct poll_table_struct {
+    pub _qproc: poll_queue_proc,
+    pub _key: __poll_t,
+}
+pub type poll_table = poll_table_struct;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct poll_table_entry {
+    pub filp: *mut file,
+    pub key: __poll_t,
+    pub wait: wait_queue_entry_t,
+    pub wait_address: *mut wait_queue_head_t,
+}
+impl Default for poll_table_entry {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct poll_wqueues {
+    pub pt: poll_table,
+    pub table: *mut poll_table_page,
+    pub polling_task: *mut task_struct,
+    pub triggered: core::ffi::c_int,
+    pub error: core::ffi::c_int,
+    pub inline_index: core::ffi::c_int,
+    pub inline_entries: [poll_table_entry; 9usize],
+}
+impl Default for poll_wqueues {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn poll_initwait(pwq: *mut poll_wqueues);
+}
+extern "C" {
+    pub fn poll_freewait(pwq: *mut poll_wqueues);
+}
+extern "C" {
+    pub fn select_estimate_accuracy(tv: *mut timespec64) -> u64_;
+}
+extern "C" {
+    pub fn core_sys_select(
+        n: core::ffi::c_int,
+        inp: *mut fd_set,
+        outp: *mut fd_set,
+        exp: *mut fd_set,
+        end_time: *mut timespec64,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn poll_select_set_timeout(
+        to: *mut timespec64,
+        sec: time64_t,
+        nsec: core::ffi::c_long,
+    ) -> core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_buffer {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ring_buffer_iter {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Default)]
+pub struct ring_buffer_event {
+    pub _bitfield_align_1: [u32; 0],
+    pub _bitfield_1: __BindgenBitfieldUnit<[u8; 4usize]>,
+    pub array: __IncompleteArrayField<u32_>,
+}
+impl ring_buffer_event {
+    #[inline]
+    pub fn type_len(&self) -> u32_ {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(0usize, 5u8) as u32) }
+    }
+    #[inline]
+    pub fn set_type_len(&mut self, val: u32_) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(0usize, 5u8, val as u64)
+        }
+    }
+    #[inline]
+    pub fn time_delta(&self) -> u32_ {
+        unsafe { ::core::mem::transmute(self._bitfield_1.get(5usize, 27u8) as u32) }
+    }
+    #[inline]
+    pub fn set_time_delta(&mut self, val: u32_) {
+        unsafe {
+            let val: u32 = ::core::mem::transmute(val);
+            self._bitfield_1.set(5usize, 27u8, val as u64)
+        }
+    }
+    #[inline]
+    pub fn new_bitfield_1(type_len: u32_, time_delta: u32_) -> __BindgenBitfieldUnit<[u8; 4usize]> {
+        let mut __bindgen_bitfield_unit: __BindgenBitfieldUnit<[u8; 4usize]> = Default::default();
+        __bindgen_bitfield_unit.set(0usize, 5u8, {
+            let type_len: u32 = unsafe { ::core::mem::transmute(type_len) };
+            type_len as u64
+        });
+        __bindgen_bitfield_unit.set(5usize, 27u8, {
+            let time_delta: u32 = unsafe { ::core::mem::transmute(time_delta) };
+            time_delta as u64
+        });
+        __bindgen_bitfield_unit
+    }
+}
+pub const ring_buffer_type_RINGBUF_TYPE_DATA_TYPE_LEN_MAX: ring_buffer_type = 28;
+pub const ring_buffer_type_RINGBUF_TYPE_PADDING: ring_buffer_type = 29;
+pub const ring_buffer_type_RINGBUF_TYPE_TIME_EXTEND: ring_buffer_type = 30;
+pub const ring_buffer_type_RINGBUF_TYPE_TIME_STAMP: ring_buffer_type = 31;
+pub type ring_buffer_type = core::ffi::c_uint;
+extern "C" {
+    pub fn ring_buffer_event_length(event: *mut ring_buffer_event) -> core::ffi::c_uint;
+}
+extern "C" {
+    pub fn ring_buffer_event_data(event: *mut ring_buffer_event) -> *mut core::ffi::c_void;
+}
+extern "C" {
+    pub fn ring_buffer_event_time_stamp(
+        buffer: *mut trace_buffer,
+        event: *mut ring_buffer_event,
+    ) -> u64_;
+}
+extern "C" {
+    pub fn ring_buffer_discard_commit(buffer: *mut trace_buffer, event: *mut ring_buffer_event);
+}
+extern "C" {
+    pub fn __ring_buffer_alloc(
+        size: core::ffi::c_ulong,
+        flags: core::ffi::c_uint,
+        key: *mut lock_class_key,
+    ) -> *mut trace_buffer;
+}
+pub type ring_buffer_cond_fn =
+    ::core::option::Option<unsafe extern "C" fn(data: *mut core::ffi::c_void) -> bool_>;
+extern "C" {
+    pub fn ring_buffer_wait(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        full: core::ffi::c_int,
+        cond: ring_buffer_cond_fn,
+        data: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_poll_wait(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        filp: *mut file,
+        poll_table: *mut poll_table,
+        full: core::ffi::c_int,
+    ) -> __poll_t;
+}
+extern "C" {
+    pub fn ring_buffer_wake_waiters(buffer: *mut trace_buffer, cpu: core::ffi::c_int);
+}
+extern "C" {
+    pub fn ring_buffer_free(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_resize(
+        buffer: *mut trace_buffer,
+        size: core::ffi::c_ulong,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_change_overwrite(buffer: *mut trace_buffer, val: core::ffi::c_int);
+}
+extern "C" {
+    pub fn ring_buffer_lock_reserve(
+        buffer: *mut trace_buffer,
+        length: core::ffi::c_ulong,
+    ) -> *mut ring_buffer_event;
+}
+extern "C" {
+    pub fn ring_buffer_unlock_commit(buffer: *mut trace_buffer) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_write(
+        buffer: *mut trace_buffer,
+        length: core::ffi::c_ulong,
+        data: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_nest_start(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_nest_end(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_peek(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        ts: *mut u64_,
+        lost_events: *mut core::ffi::c_ulong,
+    ) -> *mut ring_buffer_event;
+}
+extern "C" {
+    pub fn ring_buffer_consume(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        ts: *mut u64_,
+        lost_events: *mut core::ffi::c_ulong,
+    ) -> *mut ring_buffer_event;
+}
+extern "C" {
+    pub fn ring_buffer_read_prepare(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        flags: gfp_t,
+    ) -> *mut ring_buffer_iter;
+}
+extern "C" {
+    pub fn ring_buffer_read_prepare_sync();
+}
+extern "C" {
+    pub fn ring_buffer_read_start(iter: *mut ring_buffer_iter);
+}
+extern "C" {
+    pub fn ring_buffer_read_finish(iter: *mut ring_buffer_iter);
+}
+extern "C" {
+    pub fn ring_buffer_iter_peek(
+        iter: *mut ring_buffer_iter,
+        ts: *mut u64_,
+    ) -> *mut ring_buffer_event;
+}
+extern "C" {
+    pub fn ring_buffer_iter_advance(iter: *mut ring_buffer_iter);
+}
+extern "C" {
+    pub fn ring_buffer_iter_reset(iter: *mut ring_buffer_iter);
+}
+extern "C" {
+    pub fn ring_buffer_iter_empty(iter: *mut ring_buffer_iter) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_iter_dropped(iter: *mut ring_buffer_iter) -> bool_;
+}
+extern "C" {
+    pub fn ring_buffer_size(buffer: *mut trace_buffer, cpu: core::ffi::c_int)
+        -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_max_event_size(buffer: *mut trace_buffer) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_reset_cpu(buffer: *mut trace_buffer, cpu: core::ffi::c_int);
+}
+extern "C" {
+    pub fn ring_buffer_reset_online_cpus(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_reset(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_empty(buffer: *mut trace_buffer) -> bool_;
+}
+extern "C" {
+    pub fn ring_buffer_empty_cpu(buffer: *mut trace_buffer, cpu: core::ffi::c_int) -> bool_;
+}
+extern "C" {
+    pub fn ring_buffer_record_disable(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_record_enable(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_record_off(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_record_on(buffer: *mut trace_buffer);
+}
+extern "C" {
+    pub fn ring_buffer_record_is_on(buffer: *mut trace_buffer) -> bool_;
+}
+extern "C" {
+    pub fn ring_buffer_record_is_set_on(buffer: *mut trace_buffer) -> bool_;
+}
+extern "C" {
+    pub fn ring_buffer_record_disable_cpu(buffer: *mut trace_buffer, cpu: core::ffi::c_int);
+}
+extern "C" {
+    pub fn ring_buffer_record_enable_cpu(buffer: *mut trace_buffer, cpu: core::ffi::c_int);
+}
+extern "C" {
+    pub fn ring_buffer_oldest_event_ts(buffer: *mut trace_buffer, cpu: core::ffi::c_int) -> u64_;
+}
+extern "C" {
+    pub fn ring_buffer_bytes_cpu(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_entries(buffer: *mut trace_buffer) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_overruns(buffer: *mut trace_buffer) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_entries_cpu(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_overrun_cpu(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_commit_overrun_cpu(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_dropped_events_cpu(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_read_events_cpu(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> core::ffi::c_ulong;
+}
+extern "C" {
+    pub fn ring_buffer_time_stamp(buffer: *mut trace_buffer) -> u64_;
+}
+extern "C" {
+    pub fn ring_buffer_normalize_time_stamp(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        ts: *mut u64_,
+    );
+}
+extern "C" {
+    pub fn ring_buffer_set_clock(
+        buffer: *mut trace_buffer,
+        clock: ::core::option::Option<unsafe extern "C" fn() -> u64_>,
+    );
+}
+extern "C" {
+    pub fn ring_buffer_set_time_stamp_abs(buffer: *mut trace_buffer, abs: bool_);
+}
+extern "C" {
+    pub fn ring_buffer_time_stamp_abs(buffer: *mut trace_buffer) -> bool_;
+}
+extern "C" {
+    pub fn ring_buffer_nr_pages(buffer: *mut trace_buffer, cpu: core::ffi::c_int) -> usize;
+}
+extern "C" {
+    pub fn ring_buffer_nr_dirty_pages(buffer: *mut trace_buffer, cpu: core::ffi::c_int) -> usize;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct buffer_data_read_page {
+    _unused: [u8; 0],
+}
+extern "C" {
+    pub fn ring_buffer_alloc_read_page(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+    ) -> *mut buffer_data_read_page;
+}
+extern "C" {
+    pub fn ring_buffer_free_read_page(
+        buffer: *mut trace_buffer,
+        cpu: core::ffi::c_int,
+        page: *mut buffer_data_read_page,
+    );
+}
+extern "C" {
+    pub fn ring_buffer_read_page(
+        buffer: *mut trace_buffer,
+        data_page: *mut buffer_data_read_page,
+        len: usize,
+        cpu: core::ffi::c_int,
+        full: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_read_page_data(page: *mut buffer_data_read_page) -> *mut core::ffi::c_void;
+}
+extern "C" {
+    pub fn ring_buffer_print_entry_header(s: *mut trace_seq) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_print_page_header(
+        buffer: *mut trace_buffer,
+        s: *mut trace_seq,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_subbuf_order_get(buffer: *mut trace_buffer) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_subbuf_order_set(
+        buffer: *mut trace_buffer,
+        order: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ring_buffer_subbuf_size_get(buffer: *mut trace_buffer) -> core::ffi::c_int;
+}
+pub const ring_buffer_flags_RB_FL_OVERWRITE: ring_buffer_flags = 1;
+pub type ring_buffer_flags = core::ffi::c_uint;
+extern "C" {
+    pub fn trace_rb_cpu_prepare(cpu: core::ffi::c_uint, node: *mut hlist_node) -> core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct seq_buf {
+    pub buffer: *mut core::ffi::c_char,
+    pub size: usize,
+    pub len: usize,
+}
+impl Default for seq_buf {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn seq_buf_printf(s: *mut seq_buf, fmt: *const core::ffi::c_char, ...) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_vprintf(
+        s: *mut seq_buf,
+        fmt: *const core::ffi::c_char,
+        args: *mut __va_list_tag,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_print_seq(m: *mut seq_file, s: *mut seq_buf) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_to_user(
+        s: *mut seq_buf,
+        ubuf: *mut core::ffi::c_char,
+        start: usize,
+        cnt: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_puts(s: *mut seq_buf, str_: *const core::ffi::c_char) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_putc(s: *mut seq_buf, c: core::ffi::c_uchar) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_putmem(
+        s: *mut seq_buf,
+        mem: *const core::ffi::c_void,
+        len: core::ffi::c_uint,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_putmem_hex(
+        s: *mut seq_buf,
+        mem: *const core::ffi::c_void,
+        len: core::ffi::c_uint,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_path(
+        s: *mut seq_buf,
+        path: *const path,
+        esc: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_hex_dump(
+        s: *mut seq_buf,
+        prefix_str: *const core::ffi::c_char,
+        prefix_type: core::ffi::c_int,
+        rowsize: core::ffi::c_int,
+        groupsize: core::ffi::c_int,
+        buf: *const core::ffi::c_void,
+        len: usize,
+        ascii: bool_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_bprintf(
+        s: *mut seq_buf,
+        fmt: *const core::ffi::c_char,
+        binary: *const u32_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn seq_buf_do_printk(s: *mut seq_buf, lvl: *const core::ffi::c_char);
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_seq {
+    pub buffer: [core::ffi::c_char; 8156usize],
+    pub seq: seq_buf,
+    pub readpos: usize,
+    pub full: core::ffi::c_int,
+}
+impl Default for trace_seq {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn trace_seq_printf(s: *mut trace_seq, fmt: *const core::ffi::c_char, ...);
+}
+extern "C" {
+    pub fn trace_seq_vprintf(
+        s: *mut trace_seq,
+        fmt: *const core::ffi::c_char,
+        args: *mut __va_list_tag,
+    );
+}
+extern "C" {
+    pub fn trace_seq_bprintf(s: *mut trace_seq, fmt: *const core::ffi::c_char, binary: *const u32_);
+}
+extern "C" {
+    pub fn trace_print_seq(m: *mut seq_file, s: *mut trace_seq) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_seq_to_user(
+        s: *mut trace_seq,
+        ubuf: *mut core::ffi::c_char,
+        cnt: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_seq_puts(s: *mut trace_seq, str_: *const core::ffi::c_char);
+}
+extern "C" {
+    pub fn trace_seq_putc(s: *mut trace_seq, c: core::ffi::c_uchar);
+}
+extern "C" {
+    pub fn trace_seq_putmem(
+        s: *mut trace_seq,
+        mem: *const core::ffi::c_void,
+        len: core::ffi::c_uint,
+    );
+}
+extern "C" {
+    pub fn trace_seq_putmem_hex(
+        s: *mut trace_seq,
+        mem: *const core::ffi::c_void,
+        len: core::ffi::c_uint,
+    );
+}
+extern "C" {
+    pub fn trace_seq_path(s: *mut trace_seq, path: *const path) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_seq_bitmask(
+        s: *mut trace_seq,
+        maskp: *const core::ffi::c_ulong,
+        nmaskbits: core::ffi::c_int,
+    );
+}
+extern "C" {
+    pub fn trace_seq_hex_dump(
+        s: *mut trace_seq,
+        prefix_str: *const core::ffi::c_char,
+        prefix_type: core::ffi::c_int,
+        rowsize: core::ffi::c_int,
+        groupsize: core::ffi::c_int,
+        buf: *const core::ffi::c_void,
+        len: usize,
+        ascii: bool_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_seq_acquire(s: *mut trace_seq, len: core::ffi::c_uint) -> *mut core::ffi::c_char;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_eval_map {
+    pub system: *const core::ffi::c_char,
+    pub eval_string: *const core::ffi::c_char,
+    pub eval_value: core::ffi::c_ulong,
+}
+impl Default for trace_eval_map {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub static mut tracepoint_srcu: srcu_struct;
+}
+extern "C" {
+    pub fn tracepoint_probe_register(
+        tp: *mut tracepoint,
+        probe: *mut core::ffi::c_void,
+        data: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn tracepoint_probe_register_prio(
+        tp: *mut tracepoint,
+        probe: *mut core::ffi::c_void,
+        data: *mut core::ffi::c_void,
+        prio: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn tracepoint_probe_register_prio_may_exist(
+        tp: *mut tracepoint,
+        probe: *mut core::ffi::c_void,
+        data: *mut core::ffi::c_void,
+        prio: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn tracepoint_probe_unregister(
+        tp: *mut tracepoint,
+        probe: *mut core::ffi::c_void,
+        data: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn for_each_kernel_tracepoint(
+        fct: ::core::option::Option<
+            unsafe extern "C" fn(tp: *mut tracepoint, priv_: *mut core::ffi::c_void),
+        >,
+        priv_: *mut core::ffi::c_void,
+    );
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct tp_module {
+    pub list: list_head,
+    pub mod_: *mut module,
+}
+impl Default for tp_module {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn trace_module_has_bad_taint(mod_: *mut module) -> bool_;
+}
+extern "C" {
+    pub fn register_tracepoint_module_notifier(nb: *mut notifier_block) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn unregister_tracepoint_module_notifier(nb: *mut notifier_block) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn syscall_regfunc() -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn syscall_unregfunc();
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_array {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct array_buffer {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct tracer {
+    _unused: [u8; 0],
+}
+extern "C" {
+    pub fn trace_print_flags_seq(
+        p: *mut trace_seq,
+        delim: *const core::ffi::c_char,
+        flags: core::ffi::c_ulong,
+        flag_array: *const trace_print_flags,
+    ) -> *const core::ffi::c_char;
+}
+extern "C" {
+    pub fn trace_print_symbols_seq(
+        p: *mut trace_seq,
+        val: core::ffi::c_ulong,
+        symbol_array: *const trace_print_flags,
+    ) -> *const core::ffi::c_char;
+}
+extern "C" {
+    pub fn trace_print_bitmask_seq(
+        p: *mut trace_seq,
+        bitmask_ptr: *mut core::ffi::c_void,
+        bitmask_size: core::ffi::c_uint,
+    ) -> *const core::ffi::c_char;
+}
+extern "C" {
+    pub fn trace_print_hex_seq(
+        p: *mut trace_seq,
+        buf: *const core::ffi::c_uchar,
+        len: core::ffi::c_int,
+        concatenate: bool_,
+    ) -> *const core::ffi::c_char;
+}
+extern "C" {
+    pub fn trace_print_array_seq(
+        p: *mut trace_seq,
+        buf: *const core::ffi::c_void,
+        count: core::ffi::c_int,
+        el_size: usize,
+    ) -> *const core::ffi::c_char;
+}
+extern "C" {
+    pub fn trace_print_hex_dump_seq(
+        p: *mut trace_seq,
+        prefix_str: *const core::ffi::c_char,
+        prefix_type: core::ffi::c_int,
+        rowsize: core::ffi::c_int,
+        groupsize: core::ffi::c_int,
+        buf: *const core::ffi::c_void,
+        len: usize,
+        ascii: bool_,
+    ) -> *const core::ffi::c_char;
+}
+extern "C" {
+    pub fn trace_raw_output_prep(
+        iter: *mut trace_iterator,
+        event: *mut trace_event,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_event_printf(iter: *mut trace_iterator, fmt: *const core::ffi::c_char, ...);
+}
+#[repr(C, packed)]
+#[derive(Default, Copy, Clone)]
+pub struct trace_dynamic_info {
+    pub offset: u16_,
+    pub len: u16_,
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct trace_entry {
+    pub type_: core::ffi::c_ushort,
+    pub flags: core::ffi::c_uchar,
+    pub preempt_count: core::ffi::c_uchar,
+    pub pid: core::ffi::c_int,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_iterator {
+    pub tr: *mut trace_array,
+    pub trace: *mut tracer,
+    pub array_buffer: *mut array_buffer,
+    pub private: *mut core::ffi::c_void,
+    pub cpu_file: core::ffi::c_int,
+    pub mutex: mutex,
+    pub buffer_iter: *mut *mut ring_buffer_iter,
+    pub iter_flags: core::ffi::c_ulong,
+    pub temp: *mut core::ffi::c_void,
+    pub temp_size: core::ffi::c_uint,
+    pub fmt: *mut core::ffi::c_char,
+    pub fmt_size: core::ffi::c_uint,
+    pub wait_index: atomic_t,
+    pub tmp_seq: trace_seq,
+    pub started: cpumask_var_t,
+    pub closed: bool_,
+    pub snapshot: bool_,
+    pub seq: trace_seq,
+    pub ent: *mut trace_entry,
+    pub lost_events: core::ffi::c_ulong,
+    pub leftover: core::ffi::c_int,
+    pub ent_size: core::ffi::c_int,
+    pub cpu: core::ffi::c_int,
+    pub ts: u64_,
+    pub pos: loff_t,
+    pub idx: core::ffi::c_long,
+}
+impl Default for trace_iterator {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub const trace_iter_flags_TRACE_FILE_LAT_FMT: trace_iter_flags = 1;
+pub const trace_iter_flags_TRACE_FILE_ANNOTATE: trace_iter_flags = 2;
+pub const trace_iter_flags_TRACE_FILE_TIME_IN_NS: trace_iter_flags = 4;
+pub type trace_iter_flags = core::ffi::c_uint;
+pub type trace_print_func = ::core::option::Option<
+    unsafe extern "C" fn(
+        iter: *mut trace_iterator,
+        flags: core::ffi::c_int,
+        event: *mut trace_event,
+    ) -> print_line_t,
+>;
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct trace_event_functions {
+    pub trace: trace_print_func,
+    pub raw: trace_print_func,
+    pub hex: trace_print_func,
+    pub binary: trace_print_func,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event {
+    pub node: hlist_node,
+    pub type_: core::ffi::c_int,
+    pub funcs: *mut trace_event_functions,
+}
+impl Default for trace_event {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn register_trace_event(event: *mut trace_event) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn unregister_trace_event(event: *mut trace_event) -> core::ffi::c_int;
+}
+pub const print_line_t_TRACE_TYPE_PARTIAL_LINE: print_line_t = 0;
+pub const print_line_t_TRACE_TYPE_HANDLED: print_line_t = 1;
+pub const print_line_t_TRACE_TYPE_UNHANDLED: print_line_t = 2;
+pub const print_line_t_TRACE_TYPE_NO_CONSUME: print_line_t = 3;
+pub type print_line_t = i32;
+extern "C" {
+    pub fn trace_handle_return(s: *mut trace_seq) -> print_line_t;
+}
+extern "C" {
+    pub fn tracing_gen_ctx_irq_test(irqs_status: core::ffi::c_uint) -> core::ffi::c_uint;
+}
+pub const trace_flag_type_TRACE_FLAG_IRQS_OFF: trace_flag_type = 1;
+pub const trace_flag_type_TRACE_FLAG_IRQS_NOSUPPORT: trace_flag_type = 2;
+pub const trace_flag_type_TRACE_FLAG_NEED_RESCHED: trace_flag_type = 4;
+pub const trace_flag_type_TRACE_FLAG_HARDIRQ: trace_flag_type = 8;
+pub const trace_flag_type_TRACE_FLAG_SOFTIRQ: trace_flag_type = 16;
+pub const trace_flag_type_TRACE_FLAG_PREEMPT_RESCHED: trace_flag_type = 32;
+pub const trace_flag_type_TRACE_FLAG_NMI: trace_flag_type = 64;
+pub const trace_flag_type_TRACE_FLAG_BH_OFF: trace_flag_type = 128;
+pub type trace_flag_type = core::ffi::c_uint;
+extern "C" {
+    pub fn trace_event_buffer_lock_reserve(
+        current_buffer: *mut *mut trace_buffer,
+        trace_file: *mut trace_event_file,
+        type_: core::ffi::c_int,
+        len: core::ffi::c_ulong,
+        trace_ctx: core::ffi::c_uint,
+    ) -> *mut ring_buffer_event;
+}
+extern "C" {
+    pub fn tracing_record_taskinfo(task: *mut task_struct, flags: core::ffi::c_int);
+}
+extern "C" {
+    pub fn tracing_record_taskinfo_sched_switch(
+        prev: *mut task_struct,
+        next: *mut task_struct,
+        flags: core::ffi::c_int,
+    );
+}
+extern "C" {
+    pub fn tracing_record_cmdline(task: *mut task_struct);
+}
+extern "C" {
+    pub fn tracing_record_tgid(task: *mut task_struct);
+}
+extern "C" {
+    pub fn trace_output_call(
+        iter: *mut trace_iterator,
+        name: *mut core::ffi::c_char,
+        fmt: *mut core::ffi::c_char,
+        ...
+    ) -> core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct event_filter {
+    _unused: [u8; 0],
+}
+pub const trace_reg_TRACE_REG_REGISTER: trace_reg = 0;
+pub const trace_reg_TRACE_REG_UNREGISTER: trace_reg = 1;
+pub const trace_reg_TRACE_REG_PERF_REGISTER: trace_reg = 2;
+pub const trace_reg_TRACE_REG_PERF_UNREGISTER: trace_reg = 3;
+pub const trace_reg_TRACE_REG_PERF_OPEN: trace_reg = 4;
+pub const trace_reg_TRACE_REG_PERF_CLOSE: trace_reg = 5;
+pub const trace_reg_TRACE_REG_PERF_ADD: trace_reg = 6;
+pub const trace_reg_TRACE_REG_PERF_DEL: trace_reg = 7;
+pub type trace_reg = core::ffi::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event_fields {
+    pub type_: *const core::ffi::c_char,
+    pub __bindgen_anon_1: trace_event_fields__bindgen_ty_1,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union trace_event_fields__bindgen_ty_1 {
+    pub __bindgen_anon_1: trace_event_fields__bindgen_ty_1__bindgen_ty_1,
+    pub define_fields: ::core::option::Option<
+        unsafe extern "C" fn(arg1: *mut trace_event_call) -> core::ffi::c_int,
+    >,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event_fields__bindgen_ty_1__bindgen_ty_1 {
+    pub name: *const core::ffi::c_char,
+    pub size: core::ffi::c_int,
+    pub align: core::ffi::c_int,
+    pub is_signed: core::ffi::c_int,
+    pub filter_type: core::ffi::c_int,
+    pub len: core::ffi::c_int,
+}
+impl Default for trace_event_fields__bindgen_ty_1__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for trace_event_fields__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for trace_event_fields {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event_class {
+    pub system: *const core::ffi::c_char,
+    pub probe: *mut core::ffi::c_void,
+    pub perf_probe: *mut core::ffi::c_void,
+    pub reg: ::core::option::Option<
+        unsafe extern "C" fn(
+            event: *mut trace_event_call,
+            type_: trace_reg,
+            data: *mut core::ffi::c_void,
+        ) -> core::ffi::c_int,
+    >,
+    pub fields_array: *mut trace_event_fields,
+    pub get_fields:
+        ::core::option::Option<unsafe extern "C" fn(arg1: *mut trace_event_call) -> *mut list_head>,
+    pub fields: list_head,
+    pub raw_init: ::core::option::Option<
+        unsafe extern "C" fn(arg1: *mut trace_event_call) -> core::ffi::c_int,
+    >,
+}
+impl Default for trace_event_class {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn trace_event_reg(
+        event: *mut trace_event_call,
+        type_: trace_reg,
+        data: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event_buffer {
+    pub buffer: *mut trace_buffer,
+    pub event: *mut ring_buffer_event,
+    pub trace_file: *mut trace_event_file,
+    pub entry: *mut core::ffi::c_void,
+    pub trace_ctx: core::ffi::c_uint,
+    pub regs: *mut pt_regs,
+}
+impl Default for trace_event_buffer {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn trace_event_buffer_reserve(
+        fbuffer: *mut trace_event_buffer,
+        trace_file: *mut trace_event_file,
+        len: core::ffi::c_ulong,
+    ) -> *mut core::ffi::c_void;
+}
+extern "C" {
+    pub fn trace_event_buffer_commit(fbuffer: *mut trace_event_buffer);
+}
+pub const TRACE_EVENT_FL_FILTERED_BIT: _bindgen_ty_144 = 0;
+pub const TRACE_EVENT_FL_CAP_ANY_BIT: _bindgen_ty_144 = 1;
+pub const TRACE_EVENT_FL_NO_SET_FILTER_BIT: _bindgen_ty_144 = 2;
+pub const TRACE_EVENT_FL_IGNORE_ENABLE_BIT: _bindgen_ty_144 = 3;
+pub const TRACE_EVENT_FL_TRACEPOINT_BIT: _bindgen_ty_144 = 4;
+pub const TRACE_EVENT_FL_DYNAMIC_BIT: _bindgen_ty_144 = 5;
+pub const TRACE_EVENT_FL_KPROBE_BIT: _bindgen_ty_144 = 6;
+pub const TRACE_EVENT_FL_UPROBE_BIT: _bindgen_ty_144 = 7;
+pub const TRACE_EVENT_FL_EPROBE_BIT: _bindgen_ty_144 = 8;
+pub const TRACE_EVENT_FL_FPROBE_BIT: _bindgen_ty_144 = 9;
+pub const TRACE_EVENT_FL_CUSTOM_BIT: _bindgen_ty_144 = 10;
+pub type _bindgen_ty_144 = core::ffi::c_uint;
+pub const TRACE_EVENT_FL_FILTERED: _bindgen_ty_145 = 1;
+pub const TRACE_EVENT_FL_CAP_ANY: _bindgen_ty_145 = 2;
+pub const TRACE_EVENT_FL_NO_SET_FILTER: _bindgen_ty_145 = 4;
+pub const TRACE_EVENT_FL_IGNORE_ENABLE: _bindgen_ty_145 = 8;
+pub const TRACE_EVENT_FL_TRACEPOINT: _bindgen_ty_145 = 16;
+pub const TRACE_EVENT_FL_DYNAMIC: _bindgen_ty_145 = 32;
+pub const TRACE_EVENT_FL_KPROBE: _bindgen_ty_145 = 64;
+pub const TRACE_EVENT_FL_UPROBE: _bindgen_ty_145 = 128;
+pub const TRACE_EVENT_FL_EPROBE: _bindgen_ty_145 = 256;
+pub const TRACE_EVENT_FL_FPROBE: _bindgen_ty_145 = 512;
+pub const TRACE_EVENT_FL_CUSTOM: _bindgen_ty_145 = 1024;
+pub type _bindgen_ty_145 = core::ffi::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event_call {
+    pub list: list_head,
+    pub class: *mut trace_event_class,
+    pub __bindgen_anon_1: trace_event_call__bindgen_ty_1,
+    pub event: trace_event,
+    pub print_fmt: *mut core::ffi::c_char,
+    pub filter: *mut event_filter,
+    pub __bindgen_anon_2: trace_event_call__bindgen_ty_2,
+    pub data: *mut core::ffi::c_void,
+    pub flags: core::ffi::c_int,
+    pub perf_refcount: core::ffi::c_int,
+    pub perf_events: *mut hlist_head,
+    pub prog_array: *mut bpf_prog_array,
+    pub perf_perm: ::core::option::Option<
+        unsafe extern "C" fn(
+            arg1: *mut trace_event_call,
+            arg2: *mut perf_event,
+        ) -> core::ffi::c_int,
+    >,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union trace_event_call__bindgen_ty_1 {
+    pub name: *mut core::ffi::c_char,
+    pub tp: *mut tracepoint,
+}
+impl Default for trace_event_call__bindgen_ty_1 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union trace_event_call__bindgen_ty_2 {
+    pub module: *mut core::ffi::c_void,
+    pub refcnt: atomic_t,
+}
+impl Default for trace_event_call__bindgen_ty_2 {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+impl Default for trace_event_call {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn trace_event_dyn_try_get_ref(call: *mut trace_event_call) -> bool_;
+}
+extern "C" {
+    pub fn trace_event_dyn_put_ref(call: *mut trace_event_call);
+}
+extern "C" {
+    pub fn trace_event_dyn_busy(call: *mut trace_event_call) -> bool_;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_subsystem_dir {
+    _unused: [u8; 0],
+}
+pub const EVENT_FILE_FL_ENABLED_BIT: _bindgen_ty_146 = 0;
+pub const EVENT_FILE_FL_RECORDED_CMD_BIT: _bindgen_ty_146 = 1;
+pub const EVENT_FILE_FL_RECORDED_TGID_BIT: _bindgen_ty_146 = 2;
+pub const EVENT_FILE_FL_FILTERED_BIT: _bindgen_ty_146 = 3;
+pub const EVENT_FILE_FL_NO_SET_FILTER_BIT: _bindgen_ty_146 = 4;
+pub const EVENT_FILE_FL_SOFT_MODE_BIT: _bindgen_ty_146 = 5;
+pub const EVENT_FILE_FL_SOFT_DISABLED_BIT: _bindgen_ty_146 = 6;
+pub const EVENT_FILE_FL_TRIGGER_MODE_BIT: _bindgen_ty_146 = 7;
+pub const EVENT_FILE_FL_TRIGGER_COND_BIT: _bindgen_ty_146 = 8;
+pub const EVENT_FILE_FL_PID_FILTER_BIT: _bindgen_ty_146 = 9;
+pub const EVENT_FILE_FL_WAS_ENABLED_BIT: _bindgen_ty_146 = 10;
+pub const EVENT_FILE_FL_FREED_BIT: _bindgen_ty_146 = 11;
+pub type _bindgen_ty_146 = core::ffi::c_uint;
+extern "C" {
+    pub fn trace_get_event_file(
+        instance: *const core::ffi::c_char,
+        system: *const core::ffi::c_char,
+        event: *const core::ffi::c_char,
+    ) -> *mut trace_event_file;
+}
+extern "C" {
+    pub fn trace_put_event_file(file: *mut trace_event_file);
+}
+pub const dynevent_type_DYNEVENT_TYPE_SYNTH: dynevent_type = 1;
+pub const dynevent_type_DYNEVENT_TYPE_KPROBE: dynevent_type = 2;
+pub const dynevent_type_DYNEVENT_TYPE_NONE: dynevent_type = 3;
+pub type dynevent_type = core::ffi::c_uint;
+pub type dynevent_create_fn_t =
+    ::core::option::Option<unsafe extern "C" fn(cmd: *mut dynevent_cmd) -> core::ffi::c_int>;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct dynevent_cmd {
+    pub seq: seq_buf,
+    pub event_name: *const core::ffi::c_char,
+    pub n_fields: core::ffi::c_uint,
+    pub type_: dynevent_type,
+    pub run_command: dynevent_create_fn_t,
+    pub private_data: *mut core::ffi::c_void,
+}
+impl Default for dynevent_cmd {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn dynevent_create(cmd: *mut dynevent_cmd) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_delete(name: *const core::ffi::c_char) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_cmd_init(
+        cmd: *mut dynevent_cmd,
+        buf: *mut core::ffi::c_char,
+        maxlen: core::ffi::c_int,
+    );
+}
+extern "C" {
+    pub fn __synth_event_gen_cmd_start(
+        cmd: *mut dynevent_cmd,
+        name: *const core::ffi::c_char,
+        mod_: *mut module,
+        ...
+    ) -> core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct synth_field_desc {
+    pub type_: *const core::ffi::c_char,
+    pub name: *const core::ffi::c_char,
+}
+impl Default for synth_field_desc {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn synth_event_gen_cmd_array_start(
+        cmd: *mut dynevent_cmd,
+        name: *const core::ffi::c_char,
+        mod_: *mut module,
+        fields: *mut synth_field_desc,
+        n_fields: core::ffi::c_uint,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_create(
+        name: *const core::ffi::c_char,
+        fields: *mut synth_field_desc,
+        n_fields: core::ffi::c_uint,
+        mod_: *mut module,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_add_field(
+        cmd: *mut dynevent_cmd,
+        type_: *const core::ffi::c_char,
+        name: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_add_field_str(
+        cmd: *mut dynevent_cmd,
+        type_name: *const core::ffi::c_char,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_add_fields(
+        cmd: *mut dynevent_cmd,
+        fields: *mut synth_field_desc,
+        n_fields: core::ffi::c_uint,
+    ) -> core::ffi::c_int;
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct synth_event {
+    _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct synth_event_trace_state {
+    pub fbuffer: trace_event_buffer,
+    pub entry: *mut synth_trace_event,
+    pub buffer: *mut trace_buffer,
+    pub event: *mut synth_event,
+    pub cur_field: core::ffi::c_uint,
+    pub n_u64: core::ffi::c_uint,
+    pub disabled: bool_,
+    pub add_next: bool_,
+    pub add_name: bool_,
+}
+impl Default for synth_event_trace_state {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+extern "C" {
+    pub fn synth_event_trace(
+        file: *mut trace_event_file,
+        n_vals: core::ffi::c_uint,
+        ...
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_trace_array(
+        file: *mut trace_event_file,
+        vals: *mut u64_,
+        n_vals: core::ffi::c_uint,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_trace_start(
+        file: *mut trace_event_file,
+        trace_state: *mut synth_event_trace_state,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_add_next_val(
+        val: u64_,
+        trace_state: *mut synth_event_trace_state,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_add_val(
+        field_name: *const core::ffi::c_char,
+        val: u64_,
+        trace_state: *mut synth_event_trace_state,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn synth_event_trace_end(trace_state: *mut synth_event_trace_state) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn kprobe_event_delete(name: *const core::ffi::c_char) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn kprobe_event_cmd_init(
+        cmd: *mut dynevent_cmd,
+        buf: *mut core::ffi::c_char,
+        maxlen: core::ffi::c_int,
+    );
+}
+extern "C" {
+    pub fn __kprobe_event_gen_cmd_start(
+        cmd: *mut dynevent_cmd,
+        kretprobe: bool_,
+        name: *const core::ffi::c_char,
+        loc: *const core::ffi::c_char,
+        ...
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn __kprobe_event_add_fields(cmd: *mut dynevent_cmd, ...) -> core::ffi::c_int;
+}
+pub const EVENT_FILE_FL_ENABLED: _bindgen_ty_147 = 1;
+pub const EVENT_FILE_FL_RECORDED_CMD: _bindgen_ty_147 = 2;
+pub const EVENT_FILE_FL_RECORDED_TGID: _bindgen_ty_147 = 4;
+pub const EVENT_FILE_FL_FILTERED: _bindgen_ty_147 = 8;
+pub const EVENT_FILE_FL_NO_SET_FILTER: _bindgen_ty_147 = 16;
+pub const EVENT_FILE_FL_SOFT_MODE: _bindgen_ty_147 = 32;
+pub const EVENT_FILE_FL_SOFT_DISABLED: _bindgen_ty_147 = 64;
+pub const EVENT_FILE_FL_TRIGGER_MODE: _bindgen_ty_147 = 128;
+pub const EVENT_FILE_FL_TRIGGER_COND: _bindgen_ty_147 = 256;
+pub const EVENT_FILE_FL_PID_FILTER: _bindgen_ty_147 = 512;
+pub const EVENT_FILE_FL_WAS_ENABLED: _bindgen_ty_147 = 1024;
+pub const EVENT_FILE_FL_FREED: _bindgen_ty_147 = 2048;
+pub type _bindgen_ty_147 = core::ffi::c_uint;
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct trace_event_file {
+    pub list: list_head,
+    pub event_call: *mut trace_event_call,
+    pub filter: *mut event_filter,
+    pub ei: *mut eventfs_inode,
+    pub tr: *mut trace_array,
+    pub system: *mut trace_subsystem_dir,
+    pub triggers: list_head,
+    pub flags: core::ffi::c_ulong,
+    pub ref_: atomic_t,
+    pub sm_ref: atomic_t,
+    pub tm_ref: atomic_t,
+}
+impl Default for trace_event_file {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+pub const event_trigger_type_ETT_NONE: event_trigger_type = 0;
+pub const event_trigger_type_ETT_TRACE_ONOFF: event_trigger_type = 1;
+pub const event_trigger_type_ETT_SNAPSHOT: event_trigger_type = 2;
+pub const event_trigger_type_ETT_STACKTRACE: event_trigger_type = 4;
+pub const event_trigger_type_ETT_EVENT_ENABLE: event_trigger_type = 8;
+pub const event_trigger_type_ETT_EVENT_HIST: event_trigger_type = 16;
+pub const event_trigger_type_ETT_HIST_ENABLE: event_trigger_type = 32;
+pub const event_trigger_type_ETT_EVENT_EPROBE: event_trigger_type = 64;
+pub type event_trigger_type = core::ffi::c_uint;
+extern "C" {
+    pub fn filter_match_preds(
+        filter: *mut event_filter,
+        rec: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn event_triggers_call(
+        file: *mut trace_event_file,
+        buffer: *mut trace_buffer,
+        rec: *mut core::ffi::c_void,
+        event: *mut ring_buffer_event,
+    ) -> event_trigger_type;
+}
+extern "C" {
+    pub fn event_triggers_post_call(file: *mut trace_event_file, tt: event_trigger_type);
+}
+extern "C" {
+    pub fn trace_event_ignore_this_pid(trace_file: *mut trace_event_file) -> bool_;
+}
+extern "C" {
+    pub fn __trace_trigger_soft_disabled(file: *mut trace_event_file) -> bool_;
+}
+extern "C" {
+    pub fn trace_call_bpf(
+        call: *mut trace_event_call,
+        ctx: *mut core::ffi::c_void,
+    ) -> core::ffi::c_uint;
+}
+extern "C" {
+    pub fn perf_event_attach_bpf_prog(
+        event: *mut perf_event,
+        prog: *mut bpf_prog,
+        bpf_cookie: u64_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_event_detach_bpf_prog(event: *mut perf_event);
+}
+extern "C" {
+    pub fn perf_event_query_prog_array(
+        event: *mut perf_event,
+        info: *mut core::ffi::c_void,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn bpf_probe_register(btp: *mut bpf_raw_event_map, prog: *mut bpf_prog)
+        -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn bpf_probe_unregister(
+        btp: *mut bpf_raw_event_map,
+        prog: *mut bpf_prog,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn bpf_get_raw_tracepoint(name: *const core::ffi::c_char) -> *mut bpf_raw_event_map;
+}
+extern "C" {
+    pub fn bpf_put_raw_tracepoint(btp: *mut bpf_raw_event_map);
+}
+extern "C" {
+    pub fn bpf_get_perf_event_info(
+        event: *const perf_event,
+        prog_id: *mut u32_,
+        fd_type: *mut u32_,
+        buf: *mut *const core::ffi::c_char,
+        probe_offset: *mut u64_,
+        probe_addr: *mut u64_,
+        missed: *mut core::ffi::c_ulong,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn bpf_kprobe_multi_link_attach(
+        attr: *const bpf_attr,
+        prog: *mut bpf_prog,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn bpf_uprobe_multi_link_attach(
+        attr: *const bpf_attr,
+        prog: *mut bpf_prog,
+    ) -> core::ffi::c_int;
+}
+pub const FILTER_OTHER: _bindgen_ty_148 = 0;
+pub const FILTER_STATIC_STRING: _bindgen_ty_148 = 1;
+pub const FILTER_DYN_STRING: _bindgen_ty_148 = 2;
+pub const FILTER_RDYN_STRING: _bindgen_ty_148 = 3;
+pub const FILTER_PTR_STRING: _bindgen_ty_148 = 4;
+pub const FILTER_TRACE_FN: _bindgen_ty_148 = 5;
+pub const FILTER_CPUMASK: _bindgen_ty_148 = 6;
+pub const FILTER_COMM: _bindgen_ty_148 = 7;
+pub const FILTER_CPU: _bindgen_ty_148 = 8;
+pub const FILTER_STACKTRACE: _bindgen_ty_148 = 9;
+pub type _bindgen_ty_148 = core::ffi::c_uint;
+extern "C" {
+    pub fn trace_event_raw_init(call: *mut trace_event_call) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_define_field(
+        call: *mut trace_event_call,
+        type_: *const core::ffi::c_char,
+        name: *const core::ffi::c_char,
+        offset: core::ffi::c_int,
+        size: core::ffi::c_int,
+        is_signed: core::ffi::c_int,
+        filter_type: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_add_event_call(call: *mut trace_event_call) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_remove_event_call(call: *mut trace_event_call) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_event_get_offsets(call: *mut trace_event_call) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ftrace_set_clr_event(
+        tr: *mut trace_array,
+        buf: *mut core::ffi::c_char,
+        set: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_set_clr_event(
+        system: *const core::ffi::c_char,
+        event: *const core::ffi::c_char,
+        set: core::ffi::c_int,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn trace_array_set_clr_event(
+        tr: *mut trace_array,
+        system: *const core::ffi::c_char,
+        event: *const core::ffi::c_char,
+        enable: bool_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub static mut perf_trace_regs: pt_regs;
+}
+extern "C" {
+    pub static mut bpf_kprobe_override: core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_trace_init(event: *mut perf_event) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_trace_destroy(event: *mut perf_event);
+}
+extern "C" {
+    pub fn perf_trace_add(event: *mut perf_event, flags: core::ffi::c_int) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_trace_del(event: *mut perf_event, flags: core::ffi::c_int);
+}
+extern "C" {
+    pub fn perf_kprobe_init(event: *mut perf_event, is_retprobe: bool_) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_kprobe_destroy(event: *mut perf_event);
+}
+extern "C" {
+    pub fn bpf_get_kprobe_info(
+        event: *const perf_event,
+        fd_type: *mut u32_,
+        symbol: *mut *const core::ffi::c_char,
+        probe_offset: *mut u64_,
+        probe_addr: *mut u64_,
+        missed: *mut core::ffi::c_ulong,
+        perf_type_tracepoint: bool_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_uprobe_init(
+        event: *mut perf_event,
+        ref_ctr_offset: core::ffi::c_ulong,
+        is_retprobe: bool_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_uprobe_destroy(event: *mut perf_event);
+}
+extern "C" {
+    pub fn bpf_get_uprobe_info(
+        event: *const perf_event,
+        fd_type: *mut u32_,
+        filename: *mut *const core::ffi::c_char,
+        probe_offset: *mut u64_,
+        probe_addr: *mut u64_,
+        perf_type_tracepoint: bool_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ftrace_profile_set_filter(
+        event: *mut perf_event,
+        event_id: core::ffi::c_int,
+        filter_str: *mut core::ffi::c_char,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn ftrace_profile_free_filter(event: *mut perf_event);
+}
+extern "C" {
+    pub fn perf_trace_buf_update(record: *mut core::ffi::c_void, type_: u16_);
+}
+extern "C" {
+    pub fn perf_trace_buf_alloc(
+        size: core::ffi::c_int,
+        regs: *mut *mut pt_regs,
+        rctxp: *mut core::ffi::c_int,
+    ) -> *mut core::ffi::c_void;
+}
+extern "C" {
+    pub fn perf_event_set_bpf_prog(
+        event: *mut perf_event,
+        prog: *mut bpf_prog,
+        bpf_cookie: u64_,
+    ) -> core::ffi::c_int;
+}
+extern "C" {
+    pub fn perf_event_free_bpf_prog(event: *mut perf_event);
+}
+extern "C" {
+    pub fn bpf_trace_run1(prog: *mut bpf_prog, arg1: u64_);
+}
+extern "C" {
+    pub fn bpf_trace_run2(prog: *mut bpf_prog, arg1: u64_, arg2: u64_);
+}
+extern "C" {
+    pub fn bpf_trace_run3(prog: *mut bpf_prog, arg1: u64_, arg2: u64_, arg3: u64_);
+}
+extern "C" {
+    pub fn bpf_trace_run4(prog: *mut bpf_prog, arg1: u64_, arg2: u64_, arg3: u64_, arg4: u64_);
+}
+extern "C" {
+    pub fn bpf_trace_run5(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run6(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run7(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+        arg7: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run8(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+        arg7: u64_,
+        arg8: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run9(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+        arg7: u64_,
+        arg8: u64_,
+        arg9: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run10(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+        arg7: u64_,
+        arg8: u64_,
+        arg9: u64_,
+        arg10: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run11(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+        arg7: u64_,
+        arg8: u64_,
+        arg9: u64_,
+        arg10: u64_,
+        arg11: u64_,
+    );
+}
+extern "C" {
+    pub fn bpf_trace_run12(
+        prog: *mut bpf_prog,
+        arg1: u64_,
+        arg2: u64_,
+        arg3: u64_,
+        arg4: u64_,
+        arg5: u64_,
+        arg6: u64_,
+        arg7: u64_,
+        arg8: u64_,
+        arg9: u64_,
+        arg10: u64_,
+        arg11: u64_,
+        arg12: u64_,
+    );
+}
+extern "C" {
+    pub fn perf_trace_run_bpf_submit(
+        raw_data: *mut core::ffi::c_void,
+        size: core::ffi::c_int,
+        rctx: core::ffi::c_int,
+        call: *mut trace_event_call,
+        count: u64_,
+        regs: *mut pt_regs,
+        head: *mut hlist_head,
+        task: *mut task_struct,
+    );
+}
 pub const ARCH_SLAB_MINALIGN: usize = 8;
 pub const GFP_KERNEL: gfp_t = 3264;
 pub const __GFP_ZERO: gfp_t = 256;
@@ -80399,16 +82192,6 @@ pub struct module_sect_attrs {
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
 pub struct module_notes_attrs {
-    pub _address: u8,
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct trace_event_call {
-    pub _address: u8,
-}
-#[repr(C)]
-#[derive(Default, Copy, Clone)]
-pub struct trace_eval_map {
     pub _address: u8,
 }
 #[repr(C)]
@@ -80669,6 +82452,16 @@ pub struct proc_dir_entry {
 }
 #[repr(C)]
 #[derive(Default, Copy, Clone)]
-pub struct event_filter {
+pub struct poll_table_page {
+    pub _address: u8,
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct synth_trace_event {
+    pub _address: u8,
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct eventfs_inode {
     pub _address: u8,
 }
