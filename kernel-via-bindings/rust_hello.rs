@@ -117,6 +117,13 @@ impl kernel::Module for RustHello {
                 cpuctx
             );
 
+            let gs: usize = 0x0;
+            asm!(
+                "mov q gs:[{}], {gs}",
+                gs = out(reg) gs,
+                in =
+            );
+
             let taskctx: *const perf_event_context = (*cpuctx).task_ctx;
 
         }
