@@ -117,12 +117,12 @@ impl kernel::Module for RustHello {
                 cpuctx
             );
 
-            let gs: usize = 0x0;
-            asm!(
-                "mov q gs:[{}], {gs}",
-                gs = out(reg) gs,
-                in =
-            );
+            let gs: usize;
+            unsafe {
+                asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") gs)
+            };
+            _printk("[rust_hello] gs: %px\n".as_ptr() as *const i8, gs);
+
 
             let taskctx: *const perf_event_context = (*cpuctx).task_ctx;
 
