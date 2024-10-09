@@ -3538,6 +3538,7 @@ pub const CONFIG_ADXL372_I2C_MODULE: u32 = 1;
 pub const CONFIG_SPI_MASTER: u32 = 1;
 pub const CONFIG_FB_TFT_RA8875_MODULE: u32 = 1;
 pub const CONFIG_ATH12K_MODULE: u32 = 1;
+pub const CONFIG_RUST_PHYLIB_ABSTRACTIONS: u32 = 1;
 pub const CONFIG_USB_SERIAL_OPTICON_MODULE: u32 = 1;
 pub const CONFIG_SND_SOC_CHV3_CODEC_MODULE: u32 = 1;
 pub const CONFIG_RTL8180_MODULE: u32 = 1;
@@ -4169,7 +4170,7 @@ pub const CONFIG_WAFER_WDT_MODULE: u32 = 1;
 pub const CONFIG_MTD_MCHP48L640_MODULE: u32 = 1;
 pub const CONFIG_BLOCK_LEGACY_AUTOLOAD: u32 = 1;
 pub const CONFIG_VIDEO_UPD64031A_MODULE: u32 = 1;
-pub const CONFIG_SYSTEM_REVOCATION_KEYS: &[u8; 1usize] = b"\0";
+pub const CONFIG_SYSTEM_REVOCATION_KEYS: &[u8; 35usize] = b"debian/canonical-revoked-certs.pem\0";
 pub const CONFIG_BATTERY_88PM860X_MODULE: u32 = 1;
 pub const CONFIG_MCP3564_MODULE: u32 = 1;
 pub const CONFIG_CHARGER_RT9467_MODULE: u32 = 1;
@@ -4561,7 +4562,7 @@ pub const CONFIG_NET_SCH_HHF_MODULE: u32 = 1;
 pub const CONFIG_CONFIGFS_FS: u32 = 1;
 pub const CONFIG_CRYPTO_TEST_MODULE: u32 = 1;
 pub const CONFIG_MTD_UBI_MODULE: u32 = 1;
-pub const CONFIG_MODULE_SIG_KEY: &[u8; 1usize] = b"\0";
+pub const CONFIG_MODULE_SIG_KEY: &[u8; 22usize] = b"certs/signing_key.pem\0";
 pub const CONFIG_INTEL_IDXD_MODULE: u32 = 1;
 pub const CONFIG_GREYBUS_USB_MODULE: u32 = 1;
 pub const CONFIG_RTC_DRV_RV3032_MODULE: u32 = 1;
@@ -19266,9 +19267,9 @@ extern "C" {
 extern "C" {
     pub fn setup_per_cpu_areas();
 }
-// extern "C" {
-//     pub static mut this_cpu_off: core::ffi::c_ulong;
-// }
+extern "C" {
+    pub static mut this_cpu_off: core::ffi::c_ulong;
+}
 #[repr(C)]
 #[derive(Default)]
 pub struct sysinfo {
@@ -38208,7 +38209,7 @@ pub type xa_lock_type = core::ffi::c_uint;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct xarray {
-    pub xa_lock: spinlock__bindgen_ty_1,
+    pub xa_lock: spinlock_t,
     pub xa_flags: gfp_t,
     pub xa_head: *mut core::ffi::c_void,
 }

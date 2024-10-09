@@ -78,7 +78,34 @@ extern "C" {
         data: *mut c_void,
         cpus: *mut cpumask
     ) -> c_int;
+    fn smp_call_function_single(
+        cpu: c_int,
+        _fn: fn(data: *mut c_void),
+        info: *mut c_void,
+        wait: c_int
+    ) -> c_int;
+
     static __per_cpu_offset: usize;
+    static pcpu_hot: pcpu_hot;
+}
+
+fn print_info(data: *mut c_void) {
+    unsafe {
+        let this_cpu_off_: usize;
+        unsafe {
+            asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
+        };
+        _printk("[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8, this_cpu_off_);
+
+        let mut cpuctx: *mut perf_cpu_context = 0x2fd20usize.wrapping_add(this_cpu_off_) as _;
+        _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
+
+        let cpu_number: i32;
+        unsafe {
+            asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
+        };
+        _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
+    }
 }
 
 impl kernel::Module for RustHello {
@@ -95,36 +122,54 @@ impl kernel::Module for RustHello {
             // let pmu: *mut pmu = idr_find(pmu_idr, perf_type_id_PERF_TYPE_TRACEPOINT.into()) as *mut _;
             // _printk("[rust_hello] pmu: %px\n".as_ptr() as *const i8, pmu);
 
-            let perf_cpu_context: usize = 0x000000000002fd20;
-            _printk(
-                "[rust_hello] perf_cpu_context: %px\n".as_ptr() as *const i8,
-                perf_cpu_context
-            );
-            _printk(
-                "[rust_hello] __per_cpu_offset: %px\n".as_ptr() as *const i8,
-                __per_cpu_offset
-            );
+            // let perf_cpu_context: usize = 0x000000000002fd20;
+            // _printk(
+            //     "[rust_hello] perf_cpu_context: %px\n".as_ptr() as *const i8,
+            //     perf_cpu_context
+            // );
+            // _printk(
+            //     "[rust_hello] __per_cpu_offset: %px\n".as_ptr() as *const i8,
+            //     __per_cpu_offset
+            // );
+            // let mut t: *const usize = __per_cpu_offset as _;
+            // for i in 1..8192 {
+            //     if (!(*t == 0usize || *t == 0xffffffffffffffffusize)) {
+            //         _printk(
+            //             "[rust_hello] t: %px\n".as_ptr() as *const i8,
+            //             *t
+            //         );
+            //     }
+            //     t = t.add(1);
+            // }
 
-            let this_cpu_off: usize = 0x0000000000019a20;
-            _printk(
-                "[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8,
-                this_cpu_off
-            );
+            // let this_cpu_off: usize = 0x0000000000019a20;
+            // _printk(
+            //     "[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8,
+            //     this_cpu_off
+            // );
 
-            let cpuctx: *const perf_cpu_context = perf_cpu_context.wrapping_add(__per_cpu_offset) as _;
-            _printk(
-                "[rust_hello] cpuctx: %px\n".as_ptr() as *const i8,
-                cpuctx
-            );
+            // let cpuctx: *const perf_cpu_context = perf_cpu_context.wrapping_add(__per_cpu_offset) as _;
+            // _printk(
+            //     "[rust_hello] cpuctx: %px\n".as_ptr() as *const i8,
+            //     cpuctx
+            // );
 
-            let gs: usize;
+            let this_cpu_off_: usize;
             unsafe {
-                asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") gs)
+                asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
             };
-            _printk("[rust_hello] gs: %px\n".as_ptr() as *const i8, gs);
+            _printk("[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8, this_cpu_off_);
 
+            let mut cpuctx: *mut perf_cpu_context = 0x2fd20_usize.wrapping_add(this_cpu_off_) as _;
+            _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
 
-            let taskctx: *const perf_event_context = (*cpuctx).task_ctx;
+            let cpu_number: i32;
+            unsafe {
+                asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
+            };
+            _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
+
+            smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
 
         }
 
