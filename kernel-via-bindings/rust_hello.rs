@@ -91,6 +91,12 @@ extern "C" {
 
 fn print_info(data: *mut c_void) {
     unsafe {
+        let cpu_number: i32;
+        unsafe {
+            asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
+        };
+        _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
+
         let this_cpu_off_: usize;
         unsafe {
             asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
@@ -100,12 +106,17 @@ fn print_info(data: *mut c_void) {
         let mut cpuctx: *mut perf_cpu_context = 0x2fd20usize.wrapping_add(this_cpu_off_) as _;
         _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
 
-        let cpu_number: i32;
-        unsafe {
-            asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
-        };
-        _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
+        let mut taskctx: *mut perf_event_context = (*cpuctx).task_ctx;
+        _printk("[rust_hello] taskctx: %px\n".as_ptr() as *const i8, taskctx);
+
     }
+}
+
+fn _run(_blob: *mut c_void) -> c_int {
+    unsafe {
+        smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
+    }
+    return 0;
 }
 
 impl kernel::Module for RustHello {
@@ -169,8 +180,7 @@ impl kernel::Module for RustHello {
             };
             _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
 
-            smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
-
+            stop_machine(_run, core::ptr::null_mut(), core::ptr::null_mut());
         }
 
         Ok(RustHello {})
