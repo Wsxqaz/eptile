@@ -1,4 +1,5 @@
 #include <linux/module.h>
+#include <linux/perf_event.h>
 #include <linux/kernel.h>
 
 MODULE_LICENSE("GPL");
@@ -45,6 +46,12 @@ int test_func(void *blob) {
     printk(KERN_INFO "[rust_hello] cpuctx: %px\n", cpuctx);
     void * off = (void *)this_cpu_read(this_cpu_off);
     printk(KERN_INFO "[rust_hello] this_cpu_off: %px\n", off);
+
+    struct idr *pmu_idr = (struct idr *)0xffffffff978a8c90;
+    struct pmu *tracepoint_pmu = idr_find(pmu_idr, PERF_TYPE_TRACEPOINT);
+    printk(KERN_INFO "[rust_hello] tracepoint_pmu: %px\n", tracepoint_pmu);
+
+
     return 0;
 }
 

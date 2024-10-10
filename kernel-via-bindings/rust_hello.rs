@@ -84,6 +84,10 @@ extern "C" {
         info: *mut c_void,
         wait: c_int
     ) -> c_int;
+    fn idr_find(
+        idr: *const idr,
+        id: c_long
+    ) -> *mut c_void;
 
     static __per_cpu_offset: usize;
     static pcpu_hot: pcpu_hot;
@@ -108,6 +112,11 @@ fn print_info(data: *mut c_void) {
 
         let mut taskctx: *mut perf_event_context = (*cpuctx).task_ctx;
         _printk("[rust_hello] taskctx: %px\n".as_ptr() as *const i8, taskctx);
+
+        let pmu_idr: *const idr = 0xffffffff978a8c90usize as _;
+        let tracepoint_pmu: *const pmu = idr_find(pmu_idr, perf_type_id_PERF_TYPE_TRACEPOINT.into()) as _;
+        _printk("[rust_hello] tracepoint_pmu: %px\n".as_ptr() as *const i8, tracepoint_pmu);
+
 
     }
 }
