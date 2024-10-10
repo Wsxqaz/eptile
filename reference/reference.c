@@ -51,6 +51,10 @@ int test_func(void *blob) {
     struct pmu *tracepoint_pmu = idr_find(pmu_idr, PERF_TYPE_TRACEPOINT);
     printk(KERN_INFO "[rust_hello] tracepoint_pmu: %px\n", tracepoint_pmu);
 
+    struct perf_cpu_pmu_context *cpc = per_cpu_ptr(tracepoint_pmu->cpu_pmu_context, 0);
+    printk(KERN_INFO "[rust_hello] cpc = %px\n", cpc);
+    struct perf_event_pmu_context *pmu_ctx = &cpc->epc;
+    printk(KERN_INFO "[rust_hello] pmu_ctx = %px\n", pmu_ctx);
 
     return 0;
 }
