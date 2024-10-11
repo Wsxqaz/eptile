@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/perf_event.h>
 #include <linux/kernel.h>
+#include <linux/min_heap.h>
 
 MODULE_LICENSE("GPL");
 
@@ -55,6 +56,14 @@ int test_func(void *blob) {
     printk(KERN_INFO "[rust_hello] cpc = %px\n", cpc);
     struct perf_event_pmu_context *pmu_ctx = &cpc->epc;
     printk(KERN_INFO "[rust_hello] pmu_ctx = %px\n", pmu_ctx);
+
+    struct min_heap event_heap = {
+      .data = cpuctx->heap,
+      .nr   = 0,
+      .size = cpuctx->heap_size
+    };
+
+    struct perf_event **evt = event_heap.data;
 
     return 0;
 }
