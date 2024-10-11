@@ -82159,6 +82159,33 @@ extern "C" {
         task: *mut task_struct,
     );
 }
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct min_heap {
+    pub data: *mut core::ffi::c_void,
+    pub nr: core::ffi::c_int,
+    pub size: core::ffi::c_int,
+}
+impl Default for min_heap {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+#[repr(C)]
+#[derive(Default, Copy, Clone)]
+pub struct min_heap_callbacks {
+    pub elem_size: core::ffi::c_int,
+    pub less: ::core::option::Option<
+        unsafe extern "C" fn(lhs: *const core::ffi::c_void, rhs: *const core::ffi::c_void) -> bool_,
+    >,
+    pub swp: ::core::option::Option<
+        unsafe extern "C" fn(lhs: *mut core::ffi::c_void, rhs: *mut core::ffi::c_void),
+    >,
+}
 pub const ARCH_SLAB_MINALIGN: usize = 8;
 pub const GFP_KERNEL: gfp_t = 3264;
 pub const __GFP_ZERO: gfp_t = 256;

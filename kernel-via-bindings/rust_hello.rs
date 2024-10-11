@@ -110,6 +110,8 @@ fn print_info(data: *mut c_void) {
         let mut cpuctx: *mut perf_cpu_context = 0x2fd20usize.wrapping_add(this_cpu_off_) as _;
         _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
 
+        _printk("[rust_hello] (*cpuctx).task: %px\n".as_ptr() as *const i8, (*cpuctx).ctx.task);
+
         let mut taskctx: *mut perf_event_context = (*cpuctx).task_ctx;
         _printk("[rust_hello] taskctx: %px\n".as_ptr() as *const i8, taskctx);
 
@@ -122,6 +124,13 @@ fn print_info(data: *mut c_void) {
         let pmu_ctx: *const perf_event_pmu_context = &(*cpc).epc;
         _printk("[rust_hello] pmu_ctx: %px\n".as_ptr() as *const i8, pmu_ctx);
 
+        let event_heap: min_heap = min_heap {
+            data: (*cpuctx).heap as _,
+            nr: 0,
+            size: (*cpuctx).heap_size
+        };
+
+        let evt: *const *const perf_event = core::mem::transmute( event_heap.data );
 
     }
 }
