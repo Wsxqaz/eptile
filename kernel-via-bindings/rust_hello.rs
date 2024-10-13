@@ -96,15 +96,11 @@ extern "C" {
 fn print_info(data: *mut c_void) {
     unsafe {
         let cpu_number: i32;
-        unsafe {
-            asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
-        };
+        asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number);
         _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
 
         let this_cpu_off_: usize;
-        unsafe {
-            asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
-        };
+        asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_);
         _printk("[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8, this_cpu_off_);
 
         let mut cpuctx: *mut perf_cpu_context = 0x2fd20usize.wrapping_add(this_cpu_off_) as _;
@@ -115,7 +111,7 @@ fn print_info(data: *mut c_void) {
         let mut taskctx: *mut perf_event_context = (*cpuctx).task_ctx;
         _printk("[rust_hello] taskctx: %px\n".as_ptr() as *const i8, taskctx);
 
-        let pmu_idr: *const idr = 0xffffffff978a8c90usize as _;
+        let pmu_idr: *const idr = 0xffffffffb12a8c90usize as _;
         let tracepoint_pmu: *const pmu = idr_find(pmu_idr, perf_type_id_PERF_TYPE_TRACEPOINT.into()) as _;
         _printk("[rust_hello] tracepoint_pmu: %px\n".as_ptr() as *const i8, tracepoint_pmu);
 
@@ -130,7 +126,7 @@ fn print_info(data: *mut c_void) {
             size: (*cpuctx).heap_size
         };
 
-        let evt: *const *const perf_event = core::mem::transmute( event_heap.data );
+        // let evt: *const *const perf_event = core::mem::transmute( event_heap.data );
 
     }
 }
@@ -145,49 +141,6 @@ fn _run(_blob: *mut c_void) -> c_int {
 impl kernel::Module for RustHello {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         unsafe {
-
-            // let pmu_idr: *mut idr = core::mem::transmute(0xffffffffa48a8c90usize);
-            // _printk("[rust_hello] pmu_idr.idr_base: %u\n".as_ptr() as *const i8, (* pmu_idr ).idr_base);
-            // _printk("[rust_hello] pmu_idr.idr_next: %u\n".as_ptr() as *const i8, (* pmu_idr ).idr_next);
-            // _printk(
-            //     "[rust_hello] pmu_idr.idr_rt.xa_lock.rlock.raw_lock.__bindgen_anon_1.val: %d\n".as_ptr() as *const i8,
-            //     (* pmu_idr ).idr_rt.xa_lock.rlock.raw_lock.__bindgen_anon_1.val.counter
-            // );
-            // let pmu: *mut pmu = idr_find(pmu_idr, perf_type_id_PERF_TYPE_TRACEPOINT.into()) as *mut _;
-            // _printk("[rust_hello] pmu: %px\n".as_ptr() as *const i8, pmu);
-
-            // let perf_cpu_context: usize = 0x000000000002fd20;
-            // _printk(
-            //     "[rust_hello] perf_cpu_context: %px\n".as_ptr() as *const i8,
-            //     perf_cpu_context
-            // );
-            // _printk(
-            //     "[rust_hello] __per_cpu_offset: %px\n".as_ptr() as *const i8,
-            //     __per_cpu_offset
-            // );
-            // let mut t: *const usize = __per_cpu_offset as _;
-            // for i in 1..8192 {
-            //     if (!(*t == 0usize || *t == 0xffffffffffffffffusize)) {
-            //         _printk(
-            //             "[rust_hello] t: %px\n".as_ptr() as *const i8,
-            //             *t
-            //         );
-            //     }
-            //     t = t.add(1);
-            // }
-
-            // let this_cpu_off: usize = 0x0000000000019a20;
-            // _printk(
-            //     "[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8,
-            //     this_cpu_off
-            // );
-
-            // let cpuctx: *const perf_cpu_context = perf_cpu_context.wrapping_add(__per_cpu_offset) as _;
-            // _printk(
-            //     "[rust_hello] cpuctx: %px\n".as_ptr() as *const i8,
-            //     cpuctx
-            // );
-
             let this_cpu_off_: usize;
             unsafe {
                 asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
@@ -202,6 +155,8 @@ impl kernel::Module for RustHello {
                 asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
             };
             _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
+
+            bpf_get_raw_tracepoint_module();
 
             stop_machine(_run, core::ptr::null_mut(), core::ptr::null_mut());
         }
@@ -218,59 +173,59 @@ impl Drop for RustHello {
 
 fn bpf_get_raw_tracepoint_module() {
     unsafe {
-        let _bpf_trace_modules_next: *const u8 = core::mem::transmute(0xffffffff86e08140 as usize);
-        // _printk("[rust_hello] _bpf_trace_modules_next: %px\n".as_ptr() as *const i8, _bpf_trace_modules_next);
-        let mut btm: *const bpf_trace_module =
-            container_of!(_bpf_trace_modules_next, bpf_trace_module, list);
-        let mut l = 0;
-        let mut seen = [0 as *const bpf_trace_module; 100];
-        // _printk("[rust_hello] start btm = %px\n".as_ptr() as *const i8, btm);
-        let mut btp: *const bpf_raw_event_map = core::mem::transmute(0xffffffff8703bec0 as usize);
-        let mut end: *const bpf_raw_event_map = core::mem::transmute(0xffffffff870434c0 as usize);
-        while btp < end {
-            let tp: *mut tracepoint = (*btp).tp;
-            if tp == core::ptr::null_mut() {
-                continue;
-            }
+        let _bpf_trace_modules_next: *const u8 = core::mem::transmute(0xffffffffb0a08140 as usize);
+        _printk("[rust_hello] _bpf_trace_modules_next: %px\n".as_ptr() as *const i8, _bpf_trace_modules_next);
+        // let mut btm: *const bpf_trace_module =
+        //     container_of!(_bpf_trace_modules_next, bpf_trace_module, list);
+        // let mut l = 0;
+        // let mut seen = [0 as *const bpf_trace_module; 100];
+        // // _printk("[rust_hello] start btm = %px\n".as_ptr() as *const i8, btm);
+        // let mut btp: *const bpf_raw_event_map = core::mem::transmute(0xffffffffb0c3bec0 as usize);
+        // let mut end: *const bpf_raw_event_map = core::mem::transmute(0xffffffffb0c434c0 as usize);
+        // while btp < end {
+        //     let tp: *mut tracepoint = (*btp).tp;
+        //     if tp == core::ptr::null_mut() {
+        //         continue;
+        //     }
 
-            let mut buff = [0u8; 128];
-            let mut pfxx = "[rust_hello] btp->tp->name: ".as_bytes();
-            for j in 0..pfxx.len() {
-                buff[j] = pfxx[j as usize];
-            }
-            let mut cc = (*tp).name;
-            let mut ci = 0;
-            while *cc != 0i8 {
-                buff[ci + pfxx.len()] = *cc as u8;
-                ci = ci + 1;
-                cc = cc.add(1);
-                if (pfxx.len() + ci > buff.len() - 1) {
-                    break;
-                }
-            }
-            _printk(buff.as_ptr() as *const i8);
+        //     let mut buff = [0u8; 128];
+        //     let mut pfxx = "[rust_hello] btp->tp->name: ".as_bytes();
+        //     for j in 0..pfxx.len() {
+        //         buff[j] = pfxx[j as usize];
+        //     }
+        //     let mut cc = (*tp).name;
+        //     let mut ci = 0;
+        //     while *cc != 0i8 {
+        //         buff[ci + pfxx.len()] = *cc as u8;
+        //         ci = ci + 1;
+        //         cc = cc.add(1);
+        //         if (pfxx.len() + ci > buff.len() - 1) {
+        //             break;
+        //         }
+        //     }
+        //     _printk(buff.as_ptr() as *const i8);
 
-            let mut sys_enter = true;
-            let reff = "sys_enter".as_bytes();
-            for k in 0..9 {
-                if (buff[pfxx.len() + k] == reff[k]) {
-                    continue;
-                } else {
-                    sys_enter = false;
-                    break;
-                }
-            }
+        //     let mut sys_enter = true;
+        //     let reff = "sys_enter".as_bytes();
+        //     for k in 0..9 {
+        //         if (buff[pfxx.len() + k] == reff[k]) {
+        //             continue;
+        //         } else {
+        //             sys_enter = false;
+        //             break;
+        //         }
+        //     }
 
-            if sys_enter {
-                _printk("[rust_hello] sys_enter found...\n".as_ptr() as *const i8);
-                let bpf_func = (*btp).bpf_func;
-                _printk(
-                    "[rust_hello] tp->bpf_func: %px\n".as_ptr() as *const i8,
-                    bpf_func,
-                );
-            }
+        //     if sys_enter {
+        //         _printk("[rust_hello] sys_enter found...\n".as_ptr() as *const i8);
+        //         let bpf_func = (*btp).bpf_func;
+        //         _printk(
+        //             "[rust_hello] tp->bpf_func: %px\n".as_ptr() as *const i8,
+        //             bpf_func,
+        //         );
+        //     }
 
-            btp = btp.add(1);
-        }
+        //     btp = btp.add(1);
+        // }
     }
 }
