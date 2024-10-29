@@ -91,6 +91,22 @@ extern "C" {
 
     static __per_cpu_offset: *const usize;
     static pcpu_hot: pcpu_hot;
+
+}
+
+fn load_ftrace(data: *mut c_void) {
+    unsafe {
+        let ftrace_events: list_head = core::mem::transmute(0xffffffffa6002f70u128);
+        let _f: *const trace_event_call = container_of!(&(ftrace_events.next), trace_event_call, list);
+
+        _printk("[rust_hello] _f: %px\n".as_ptr() as *const i8, _f);
+        _printk("[rust_hello] _f.event.type\n: %px".as_ptr() as *const i8, (*_f).event.type_);
+        _printk("[rust_hello] _f.class: %px\n".as_ptr() as *const i8, (*_f).class);
+        _printk("[rust_hello] _f.class.reg: %px\n".as_ptr() as *const i8, (*(*_f).class).reg);
+        _printk("[rust_hello] _f.class.system: %s\n".as_ptr() as *const i8, (*(*_f).class).system);
+
+        let __start_ftrace_events: *const trace_event_call = core::mem::transmute(0xffffffffa6561da0usize);
+    }
 }
 
 fn print_info(data: *mut c_void) {
@@ -133,7 +149,8 @@ fn print_info(data: *mut c_void) {
 
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
-        smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
+        // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
+        smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
     }
     return 0;
 }
@@ -141,22 +158,22 @@ fn _run(_blob: *mut c_void) -> c_int {
 impl kernel::Module for RustHello {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         unsafe {
-            let this_cpu_off_: usize;
-            unsafe {
-                asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
-            };
-            _printk("[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8, this_cpu_off_);
+            // let this_cpu_off_: usize;
+            // unsafe {
+            //     asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
+            // };
+            // _printk("[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8, this_cpu_off_);
 
-            let mut cpuctx: *mut perf_cpu_context = 0x2fd20_usize.wrapping_add(this_cpu_off_) as _;
-            _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
+            // let mut cpuctx: *mut perf_cpu_context = 0x2fd20_usize.wrapping_add(this_cpu_off_) as _;
+            // _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
 
-            let cpu_number: i32;
-            unsafe {
-                asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
-            };
-            _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
+            // let cpu_number: i32;
+            // unsafe {
+            //     asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
+            // };
+            // _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
 
-            bpf_get_raw_tracepoint_module();
+            // bpf_get_raw_tracepoint_module();
 
             stop_machine(_run, core::ptr::null_mut(), core::ptr::null_mut());
         }
