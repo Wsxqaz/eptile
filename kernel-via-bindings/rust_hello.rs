@@ -96,16 +96,23 @@ extern "C" {
 
 fn load_ftrace(data: *mut c_void) {
     unsafe {
-        let ftrace_events: list_head = core::mem::transmute(0xffffffffa6002f70u128);
-        let _f: *const trace_event_call = container_of!(&(ftrace_events.next), trace_event_call, list);
+        let mut ftrace_events: *mut list_head = core::mem::transmute(0xffffffff90802f70u64);
+        let mut _f: *const trace_event_call = container_of!((*ftrace_events).next, trace_event_call, list);
 
         _printk("[rust_hello] _f: %px\n".as_ptr() as *const i8, _f);
-        _printk("[rust_hello] _f.event.type\n: %px".as_ptr() as *const i8, (*_f).event.type_);
+        _printk("[rust_hello] _f.event.type: %llu\n".as_ptr() as *const i8, (*_f).event.type_);
         _printk("[rust_hello] _f.class: %px\n".as_ptr() as *const i8, (*_f).class);
         _printk("[rust_hello] _f.class.reg: %px\n".as_ptr() as *const i8, (*(*_f).class).reg);
         _printk("[rust_hello] _f.class.system: %s\n".as_ptr() as *const i8, (*(*_f).class).system);
 
-        let __start_ftrace_events: *const trace_event_call = core::mem::transmute(0xffffffffa6561da0usize);
+        while (*_f).list.next != ftrace_events {
+            _printk("[rust_hello] _f.event.type: %llu\n".as_ptr() as *const i8, (*_f).event.type_);
+            _printk("[rust_hello] _f.class: %px\n".as_ptr() as *const i8, (*_f).class);
+            _printk("[rust_hello] _f.class.reg: %px\n".as_ptr() as *const i8, (*(*_f).class).reg);
+            _printk("[rust_hello] _f.class.system: %s\n".as_ptr() as *const i8, (*(*_f).class).system);
+            _f = container_of!((*_f).list.next, trace_event_call, list);
+        }
+
     }
 }
 
