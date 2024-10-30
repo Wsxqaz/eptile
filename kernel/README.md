@@ -2,6 +2,10 @@
 
 build module
 
+## notes
+
+- set `rust_allowed_features := allocator_api` in `scripts/Makefile.build`
+
 ## prerequisites
 
 see https://www.kernel.org/doc/html/next/rust/quick-start.html
