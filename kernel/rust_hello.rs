@@ -14,6 +14,9 @@ mod bindings_helpers_generated;
 use bindings_generated::*;
 use bindings_helpers_generated::*;
 
+mod hook;
+use hook::*;
+
 module! {
     type: RustHello,
     name: "rust_hello",

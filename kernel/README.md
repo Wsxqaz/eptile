@@ -1,6 +1,6 @@
-# kernel-via-bindings
+# kernel
 
-build module via bindings
+build module
 
 ## prerequisites
 
