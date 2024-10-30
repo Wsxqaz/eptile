@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #![no_main]
 #![no_std]
 #![feature(lang_items)]
@@ -5,14 +6,25 @@
 
 use core::ffi::*;
 
+mod bindings_generated;
+use bindings_generated::*;
+
 #[no_mangle]
 extern "C" {
     fn _printk(s: *const c_char, ...) -> c_int;
 }
 
 
-fn lde_get_length(target: *mut c_void) -> usize {
-    0
+fn lde_get_length(target: *mut c_void) -> i32 {
+    unsafe {
+        let mut insn_init: extern "C" fn(*mut insn, *mut c_void, i32, i32) -> c_int = core::mem::transmute(0x0usize);
+        let mut insn_get_length: extern "C" fn(*mut insn) -> c_int = core::mem::transmute(0x0usize);
+
+        let mut insn: insn = core::mem::zeroed();
+
+        insn_init(&mut insn, target, 64, 0);
+        insn_get_length(&mut insn)
+    }
 }
 
 fn x86_put_jmp(loc: *mut c_void, target: *mut c_void) {
@@ -32,10 +44,10 @@ struct Hook {
 
 fn hook_fn(target: *mut c_void, replacement: *mut c_void, clone: *mut c_void) -> Hook {
     unsafe {
-        let mut length = lde_get_length(target);
+        let mut length: usize = lde_get_length(target) as usize;
         _printk("length: %d".as_ptr() as *const i8, length);
         while length < 5 {
-            length += lde_get_length(target.wrapping_add(length));
+            length += lde_get_length(target.wrapping_add(length)) as usize;
         }
         _printk("length: %d".as_ptr() as *const i8, length);
 
