@@ -159,17 +159,39 @@ fn print_info(data: *mut c_void) {
     }
 }
 
+fn _foobar() -> c_int {
+    _printk("original function\n");
+    0
+}
+
+fn _hook() -> c_int {
+    _printk("hooked function\n");
+    1
+}
+
+fn _stub(hook: Hook) {
+    int f = core::mem::transmute::<usize, fn() -> c_int>(_hook as _)
+
+    if (f == 1) {
+        return;
+    } else {
+
+    }
+}
+
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
         // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
         smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
 
-        let i: Box<u32> = Box::try_new(5).unwrap();
+        let i: Box<[u8; 64]> = Box::try_new([0u8; 64]).unwrap();
+        let i: Box<[u8; 64]> = Box::leak(i);
 
-        // let hook: Hook = hook_fn(
-        //     _printk as *mut c_void,
-        //     _run as *mut c_void,
-        // );
+
+        let hook: Hook = hook_fn(
+            _foobar as *mut c_void,
+            _run as *mut c_void,
+        );
     }
     return 0;
 }
