@@ -7,7 +7,7 @@
 
 use core::ffi::*;
 
-use alloc::boxed::Box;
+use ::alloc::boxed::Box;
 use crate::hook_bindings::*;
 
 #[no_mangle]
