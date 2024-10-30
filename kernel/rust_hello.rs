@@ -169,16 +169,6 @@ fn _hook() -> c_int {
     1
 }
 
-fn _stub(hook: Hook) {
-    int f = core::mem::transmute::<usize, fn() -> c_int>(_hook as _)
-
-    if (f == 1) {
-        return;
-    } else {
-
-    }
-}
-
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
         // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
@@ -187,6 +177,33 @@ fn _run(_blob: *mut c_void) -> c_int {
         let i: Box<[u8; 64]> = Box::try_new([0u8; 64]).unwrap();
         let i: Box<[u8; 64]> = Box::leak(i);
 
+        // .fn = hook function = _hook
+        // .target.name = name of function to hook = _foobar
+        // .orig = copy of n bytes (5 + insn size) =
+        //      this should be the top n (n >= 5) bytes of foobar
+        //      we need to use at least 5 bytes, so we can insert
+        //      a jump instruction to the location we want to the
+        //      function we want to jump to, i.e. _hook
+        // .stub = KHOOK_STUB_hook_noref copy
+        //      what is the purpose of stub? in the khook code,
+        //      stub is a wrapper around a jump to our hook function
+        //      we require the wrapper to handle the case when there are
+        //      more than 8 args being passed to the function, since some part
+        //      of the ABI requires distinct handling of that case by putting
+        //      the args on the stack or something like that
+        //      since we're just playing with this stuff, and it doesn't need
+        //      to be super generic yet, we can  probably ignore the stub
+        //      function, if we ignore the stub function then that means that
+        //      we want to insert a jump directly to our hook function at the
+        //      start of target
+        //
+        //      how do we decide that we want to call the original function?
+        //      khook achieves this by generating a function for each hook
+        //      that it uses as a place to copy the top N bytes of the target
+        //      function into, currently we're just copying that stuff into
+        //      some heap allocated array, we can transmute and call that
+        //      array as a function, so just ensure that you place a jump
+        //      back to the original target function at the end of the array
 
         let hook: Hook = hook_fn(
             _foobar as *mut c_void,
