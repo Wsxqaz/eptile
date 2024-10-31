@@ -118,6 +118,17 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
             644
         );
 
+        _printk("[rust_hello] file: %px\n".as_ptr() as *const i8, file);
+
+        let buf = [0u8; 128];
+        let mut pos = 0;
+
+        let _ = kernel_read(file, buf.as_ptr(), 10, &mut pos);
+
+        _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
+
+        let _  = filp_close(file, core::ptr::null_mut());
+
         core::mem::transmute(0usize)
     }
 }
@@ -269,11 +280,14 @@ fn _run(_blob: *mut c_void) -> c_int {
         // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
         // smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
 
-        let mut len: i32 = lde_get_length(_foobar as *mut c_void);
-        while len < 5 {
-            _printk("[rust_hello] len: %d\n".as_ptr() as *const i8, len);
-            len.wrapping_add(lde_get_length((_foobar as *mut c_void).wrapping_add(len as usize)));
-        }
+        let buf: &[u8; 128] = &[0u8; 128];
+        let r = read_kallsyms(core::ptr::null());
+
+        // let mut len: i32 = lde_get_length(_foobar as *mut c_void);
+        // while len < 5 {
+        //     _printk("[rust_hello] len: %d\n".as_ptr() as *const i8, len);
+        //     len.wrapping_add(lde_get_length((_foobar as *mut c_void).wrapping_add(len as usize)));
+        // }
 
         // core::ptr::copy(_foobar as *const u8, stub as *mut u8, len as usize);
         // x86_put_jmp(
