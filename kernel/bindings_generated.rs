@@ -98,15 +98,11 @@ impl<T> __IncompleteArrayField<T> {
     }
     #[inline]
     pub unsafe fn as_slice(&self, len: usize) -> &[T] {
-        unsafe {
-            ::core::slice::from_raw_parts(self.as_ptr(), len)
-        }
+        unsafe { ::core::slice::from_raw_parts(self.as_ptr(), len) }
     }
     #[inline]
     pub unsafe fn as_mut_slice(&mut self, len: usize) -> &mut [T] {
-        unsafe {
-            ::core::slice::from_raw_parts_mut(self.as_mut_ptr(), len)
-        }
+        unsafe { ::core::slice::from_raw_parts_mut(self.as_mut_ptr(), len) }
     }
 }
 impl<T> ::core::fmt::Debug for __IncompleteArrayField<T> {
@@ -123,15 +119,11 @@ impl<T> __BindgenUnionField<T> {
     }
     #[inline]
     pub unsafe fn as_ref(&self) -> &T {
-        unsafe {
-            ::core::mem::transmute(self)
-        }
+        unsafe { ::core::mem::transmute(self) }
     }
     #[inline]
     pub unsafe fn as_mut(&mut self) -> &mut T {
-        unsafe {
-            ::core::mem::transmute(self)
-        }
+        unsafe { ::core::mem::transmute(self) }
     }
 }
 impl<T> ::core::default::Default for __BindgenUnionField<T> {

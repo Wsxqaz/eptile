@@ -7,18 +7,18 @@
 
 use core::ffi::*;
 
-use ::alloc::boxed::Box;
 use crate::hook_bindings::*;
+use alloc::boxed::Box;
 
 #[no_mangle]
 extern "C" {
     fn _printk(s: *const c_char, ...) -> c_int;
 }
 
-
 fn lde_get_length(target: *mut c_void) -> i32 {
     unsafe {
-        let mut insn_init: extern "C" fn(*mut insn, *mut c_void, i32, i32) -> c_int = core::mem::transmute(0x0usize);
+        let mut insn_init: extern "C" fn(*mut insn, *mut c_void, i32, i32) -> c_int =
+            core::mem::transmute(0x0usize);
         let mut insn_get_length: extern "C" fn(*mut insn) -> c_int = core::mem::transmute(0x0usize);
 
         let mut insn: insn = core::mem::zeroed();
@@ -42,7 +42,6 @@ pub struct Hook {
     original: *mut c_void,
 }
 
-
 pub fn hook_fn(target: *mut c_void, replacement: *mut c_void) -> Hook {
     unsafe {
         let mut length: usize = lde_get_length(target) as usize;
@@ -64,4 +63,3 @@ pub fn hook_fn(target: *mut c_void, replacement: *mut c_void) -> Hook {
         }
     }
 }
-
