@@ -72,8 +72,8 @@ macro_rules! container_of {
 #[repr(C)]
 #[repr(align(64))]
 pub struct bpf_trace_module {
-    pub module: *const module,
-    pub list: list_head,
+    pub module: *const bindings_generated::module,
+    pub list: bindings_generated::list_head,
 }
 
 #[no_mangle]
@@ -82,7 +82,7 @@ extern "C" {
     fn stop_machine(
         _fn: fn(arg: *mut c_void) -> c_int,
         data: *mut c_void,
-        cpus: *mut cpumask
+        cpus: *mut bindings_generated::cpumask
     ) -> c_int;
     fn smp_call_function_single(
         cpu: c_int,
@@ -91,19 +91,19 @@ extern "C" {
         wait: c_int
     ) -> c_int;
     fn idr_find(
-        idr: *const idr,
+        idr: *const bindings_generated::idr,
         id: c_long
     ) -> *mut c_void;
 
     static __per_cpu_offset: *const usize;
-    static pcpu_hot: pcpu_hot;
+    static pcpu_hot: bindings_generated::pcpu_hot;
 
 }
 
 fn load_ftrace(data: *mut c_void) {
     unsafe {
-        let mut ftrace_events: *mut list_head = core::mem::transmute(0xffffffff90802f70u64);
-        let mut _f: *const trace_event_call = container_of!((*ftrace_events).next, trace_event_call, list);
+        let mut ftrace_events: *mut bindings_generated::list_head = core::mem::transmute(0xffffffff90802f70u64);
+        let mut _f: *const bindings_generated::trace_event_call = container_of!((*ftrace_events).next, bindings_generated::trace_event_call, list);
 
         _printk("[rust_hello] _f: %px\n".as_ptr() as *const i8, _f);
         _printk("[rust_hello] _f.event.type: %llu\n".as_ptr() as *const i8, (*_f).event.type_);
@@ -116,7 +116,7 @@ fn load_ftrace(data: *mut c_void) {
             _printk("[rust_hello] _f.class: %px\n".as_ptr() as *const i8, (*_f).class);
             _printk("[rust_hello] _f.class.reg: %px\n".as_ptr() as *const i8, (*(*_f).class).reg);
             _printk("[rust_hello] _f.class.system: %s\n".as_ptr() as *const i8, (*(*_f).class).system);
-            _f = container_of!((*_f).list.next, trace_event_call, list);
+            _f = container_of!((*_f).list.next, bindings_generated::trace_event_call, list);
         }
 
     }
@@ -137,10 +137,10 @@ fn print_info(data: *mut c_void) {
 
         _printk("[rust_hello] (*cpuctx).task: %px\n".as_ptr() as *const i8, (*cpuctx).ctx.task);
 
-        let mut taskctx: *mut perf_event_context = (*cpuctx).task_ctx;
+        let mut taskctx: *mut bindings_generated::perf_event_context = (*cpuctx).task_ctx;
         _printk("[rust_hello] taskctx: %px\n".as_ptr() as *const i8, taskctx);
 
-        let pmu_idr: *const idr = 0xffffffffb12a8c90usize as _;
+        let pmu_idr: *const bindings_generated::idr = 0xffffffffb12a8c90usize as _;
         let tracepoint_pmu: *const pmu = idr_find(pmu_idr, perf_type_id_PERF_TYPE_TRACEPOINT.into()) as _;
         _printk("[rust_hello] tracepoint_pmu: %px\n".as_ptr() as *const i8, tracepoint_pmu);
 
@@ -160,14 +160,28 @@ fn print_info(data: *mut c_void) {
     }
 }
 
+fn stub() {
+    unsafe {
+        asm!(
+            ".rept 0x80",
+            ".byte 0",
+            ".endr"
+        );
+    }
+}
+
 fn _foobar() -> c_int {
-    _printk("original function\n".as_ptr() as *const i8);
+    unsafe {
+        _printk("original function\n".as_ptr() as *const i8);
+    }
     0
 }
 
 fn _hook() -> c_int {
-    _printk("hooked function\n".as_ptr() as *const i8);
-    1
+    unsafe {
+        _printk("hooked function\n".as_ptr() as *const i8);
+    }
+    core::mem::transmute::<fn (stub())
 }
 
 fn lde_get_length(target: *mut c_void) -> i32 {
@@ -182,6 +196,14 @@ fn lde_get_length(target: *mut c_void) -> i32 {
     }
 }
 
+fn x86_put_jmp(loc: *mut u8, target: *mut u8) {
+    unsafe {
+        let mut offset = target.wrapping_sub(loc as usize).wrapping_sub(5);
+        core::ptr::write(loc as *mut u8, 0xE9);
+        core::ptr::write(loc.wrapping_add(1) as *mut i32, offset as i32);
+    }
+}
+
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
         // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
@@ -192,14 +214,18 @@ fn _run(_blob: *mut c_void) -> c_int {
 
         let mut insn: insn = core::mem::zeroed();
 
-        let len: i32 = lde_get_length(_foobar as *mut c_void);
+        let mut len: i32 = lde_get_length(_foobar as *mut c_void);
         while len < 5 {
             _printk("[rust_hello] len: %d\n".as_ptr() as *const i8, len);
             len += lde_get_length((_foobar as *mut c_void).wrapping_add(len as usize));
         }
 
+        core::ptr::copy(_foobar as *const u8, stub as *mut u8, len as usize);
+        x86_put_jmp((_foobar as *mut u8).wrapping_add(len as usize), (stub as *mut u8).wrapping_add(len as usize));
+
         let i: Box<[u8; 64]> = Box::try_new([0u8; 64]).unwrap();
-        let i: Box<[u8; 64]> = Box::leak(i);
+        let i: &mut [u8; 64] = Box::leak(i);
+        let i: *mut u8 = i as *mut [u8; 64] as *mut u8;
 
         // .fn = hook function = _hook
         // .target.name = name of function to hook = _foobar
