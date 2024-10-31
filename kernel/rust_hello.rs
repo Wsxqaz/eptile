@@ -18,6 +18,7 @@ use bindings_helpers_generated::*;
 mod hook;
 mod hook_bindings;
 use hook::*;
+use hook_bindings::*;
 
 module! {
     type: RustHello,
@@ -160,19 +161,42 @@ fn print_info(data: *mut c_void) {
 }
 
 fn _foobar() -> c_int {
-    _printk("original function\n");
+    _printk("original function\n".as_ptr() as *const i8);
     0
 }
 
 fn _hook() -> c_int {
-    _printk("hooked function\n");
+    _printk("hooked function\n".as_ptr() as *const i8);
     1
+}
+
+fn lde_get_length(target: *mut c_void) -> i32 {
+    unsafe {
+        let mut insn_init: extern "C" fn(*mut insn, *mut c_void, i32, i32) -> c_int = core::mem::transmute(0x0usize);
+        let mut insn_get_length: extern "C" fn(*mut insn) -> c_int = core::mem::transmute(0x0usize);
+
+        let mut insn: insn = core::mem::zeroed();
+
+        insn_init(&mut insn, target, 64, 0);
+        insn_get_length(&mut insn)
+    }
 }
 
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
         // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
         smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
+
+        let mut insn_init: extern "C" fn(*mut insn, *mut c_void, i32, i32) -> c_int = core::mem::transmute(0x0usize);
+        let mut insn_get_length: extern "C" fn(*mut insn) -> c_int = core::mem::transmute(0x0usize);
+
+        let mut insn: insn = core::mem::zeroed();
+
+        let len: i32 = lde_get_length(_foobar as *mut c_void);
+        while len < 5 {
+            _printk("[rust_hello] len: %d\n".as_ptr() as *const i8, len);
+            len += lde_get_length((_foobar as *mut c_void).wrapping_add(len as usize));
+        }
 
         let i: Box<[u8; 64]> = Box::try_new([0u8; 64]).unwrap();
         let i: Box<[u8; 64]> = Box::leak(i);
@@ -284,7 +308,7 @@ fn bpf_get_raw_tracepoint_module() {
         //     let reff = "sys_enter".as_bytes();
         //     for k in 0..9 {
         //         if (buff[pfxx.len() + k] == reff[k]) {
-        //             continue;
+       //             continue;
         //         } else {
         //             sys_enter = false;
         //             break;
