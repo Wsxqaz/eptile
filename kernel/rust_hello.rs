@@ -87,7 +87,7 @@ extern "C" {
 
     fn filp_open(
         filename: *const u8,
-        flags: c_int,
+        flags: u32,
         mode: bindings_generated::umode_t
     ) -> *mut bindings_generated::file;
 
@@ -98,7 +98,7 @@ extern "C" {
 
     fn kernel_read(
         file: *mut bindings_generated::file,
-        buf: *const u8,
+        buf: *mut u8,
         count: c_int,
         pos: *mut usize
     )  -> c_int;
@@ -109,23 +109,39 @@ extern "C" {
 }
 
 fn read_kallsyms(fn_: *const u8) -> *const u8 {
-    let mut kallsyms_path: &str = "/proc/kallsyms";
+    let mut kallsyms_path: &str = "/proc/kallsyms\0";
 
     unsafe {
         let file = filp_open(
             kallsyms_path.as_ptr(),
-            0,
-            644
+            bindings_generated::O_RDWR | bindings_generated::O_LARGEFILE,
+            600
         );
 
         _printk("[rust_hello] file: %px\n".as_ptr() as *const i8, file);
+        _printk("[rust_hello] file->f_mode: %d\n".as_ptr() as *const i8, (*file).f_mode);
+        _printk("[rust_hello] file->f_op: %px\n".as_ptr() as *const i8, (*file).f_op);
+        _printk("[rust_hello] file->f_op->read: %px\n".as_ptr() as *const i8, (*(*file).f_op).read);
+        _printk("[rust_hello] file->f_op->read_iter: %px\n".as_ptr() as *const i8, (*(*file).f_op).read_iter);
 
-        let buf = [0u8; 128];
+        let mut buf = [0u8; 128];
         let mut pos = 0;
 
-        let _ = kernel_read(file, buf.as_ptr(), 10, &mut pos);
+        _printk("[rust_hello] buf: %px\n".as_ptr() as *const i8, buf.as_mut_ptr());
 
-        _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
+        let read = core::mem::transmute::<usize, extern "C" fn(*mut bindings_generated::file, *mut u8, c_int, *mut usize) -> c_int>(
+            0xffffffffb6ce4170usize
+        )(file, buf.as_mut_ptr(), 128, &mut pos);
+        // let read = core::mem::transmute::<_, unsafe extern "C" fn(*mut bindings_generated::file, *mut i8, usize, *mut i64) -> isize>(
+        //     (*(*file).f_op).read
+        // )(file, buf.as_mut_ptr() as _, 1, &mut pos);
+        _printk("[rust_hello] read: %d\n".as_ptr() as *const i8, read);
+
+
+        // _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
+        for i in 0..10 {
+            _printk("[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8, i, buf[i] as c_int);
+        }
 
         let _  = filp_close(file, core::ptr::null_mut());
 
@@ -275,12 +291,10 @@ fn x86_put_jmp(loc: *mut u8, target: *mut u8) {
     }
 }
 
+// smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
+// smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
-        // smp_call_function_single(0, print_info, core::ptr::null_mut(), 1);
-        // smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
-
-        let buf: &[u8; 128] = &[0u8; 128];
         let r = read_kallsyms(core::ptr::null());
 
         // let mut len: i32 = lde_get_length(_foobar as *mut c_void);
@@ -326,8 +340,7 @@ fn _run(_blob: *mut c_void) -> c_int {
         //      some heap allocated array, we can transmute and call that
         //      array as a function, so just ensure that you place a jump
         //      back to the original target function at the end of the array
-
-        _foobar();
+        // _foobar();
     }
     return 0;
 }
@@ -335,23 +348,6 @@ fn _run(_blob: *mut c_void) -> c_int {
 impl kernel::Module for RustHello {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         unsafe {
-            // let this_cpu_off_: usize;
-            // unsafe {
-            //     asm!("mov rax, qword ptr GS:[0x19a20]", out("rax") this_cpu_off_)
-            // };
-            // _printk("[rust_hello] this_cpu_off: %px\n".as_ptr() as *const i8, this_cpu_off_);
-
-            // let mut cpuctx: *mut perf_cpu_context = 0x2fd20_usize.wrapping_add(this_cpu_off_) as _;
-            // _printk("[rust_hello] cpuctx: %px\n".as_ptr() as *const i8, cpuctx);
-
-            // let cpu_number: i32;
-            // unsafe {
-            //     asm!("mov eax, dword ptr GS:[0x3434c]", out("eax") cpu_number)
-            // };
-            // _printk("[rust_hello] cpu_number: %d\n".as_ptr() as *const i8, cpu_number);
-
-            // bpf_get_raw_tracepoint_module();
-
             stop_machine(_run, core::ptr::null_mut(), core::ptr::null_mut());
         }
 
