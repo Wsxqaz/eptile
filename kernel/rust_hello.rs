@@ -120,7 +120,7 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
         let file = filp_open(
             kallsyms_path.as_ptr(),
             bindings_generated::O_RDONLY,
-            u16::MAX as bindings_generated::umode_t,
+            0 as bindings_generated::umode_t,
         );
 
         _printk("[rust_hello] file: %px\n".as_ptr() as *const i8, file);
@@ -149,23 +149,28 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
             buf.as_mut_ptr(),
         );
 
-        let verify = rw_verify_area(0, file, &mut pos, 8);
-        _printk("[rust_hello] verify: %d\n".as_ptr() as *const i8, verify);
+        // let verify = rw_verify_area(0, file, &mut pos, 8);
+        // _printk("[rust_hello] verify: %d\n".as_ptr() as *const i8, verify);
 
-        // let read = core::mem::transmute::<_, unsafe extern "C" fn(*mut bindings_generated::file, *mut i8, usize, *mut i64) -> isize>(
-        //     (*(*file).f_op).read
-        // )(file, buf.as_mut_ptr() as _, 1, &mut pos);
-        let read = kernel_read(file, buf.as_mut_ptr(), 1, &mut pos);
-        _printk("[rust_hello] read: %d\n".as_ptr() as *const i8, read);
+        // let read: Option<_> = (*(*file).f_op).read;
+        // if let Some(read) = read {
+        //     let read_resp = read(file, buf.as_mut_ptr() as _, 8, &mut pos as *mut usize as _);
+        //     _printk("[rust_hello] read_resp: %d\n".as_ptr() as *const i8, read_resp);
+        // } else {
+        //     _printk("[rust_hello] read is None\n".as_ptr() as *const i8);
+        // }
 
-        // _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
-        for i in 0..10 {
-            _printk(
-                "[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8,
-                i,
-                buf[i] as c_int,
-            );
-        }
+        // let read = kernel_read(file, buf.as_mut_ptr(), 1, &mut pos);
+        // _printk("[rust_hello] read: %px\n".as_ptr() as *const i8, read);
+
+        // // _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
+        // for i in 0..5 {
+        //     _printk(
+        //         "[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8,
+        //         i,
+        //         buf[i] as c_int,
+        //     );
+        // }
 
         let _ = filp_close(file, core::ptr::null_mut());
 
@@ -447,3 +452,5 @@ fn bpf_get_raw_tracepoint_module() {
         // }
     }
 }
+
+
