@@ -88,20 +88,25 @@ extern "C" {
     fn filp_open(
         filename: *const u8,
         flags: u32,
-        mode: bindings_generated::umode_t
+        mode: bindings_generated::umode_t,
     ) -> *mut bindings_generated::file;
 
-    fn filp_close(
-        filp: *mut bindings_generated::file,
-        id: bindings_generated::fl_owner_t
-    ) -> c_int;
+    fn filp_close(filp: *mut bindings_generated::file, id: bindings_generated::fl_owner_t)
+        -> c_int;
 
     fn kernel_read(
         file: *mut bindings_generated::file,
         buf: *mut u8,
-        count: c_int,
-        pos: *mut usize
-    )  -> c_int;
+        count: core::ffi::c_ulong,
+        pos: *mut usize,
+    ) -> c_int;
+
+    fn rw_verify_area(
+        read: c_int,
+        addr: *const bindings_generated::file,
+        ppos: *mut usize,
+        size: core::ffi::c_ulong,
+    ) -> c_int;
 
     static __per_cpu_offset: *const usize;
     static pcpu_hot: bindings_generated::pcpu_hot;
@@ -114,36 +119,55 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
     unsafe {
         let file = filp_open(
             kallsyms_path.as_ptr(),
-            bindings_generated::O_RDWR | bindings_generated::O_LARGEFILE,
-            600
+            bindings_generated::O_RDONLY,
+            u16::MAX as bindings_generated::umode_t,
         );
 
         _printk("[rust_hello] file: %px\n".as_ptr() as *const i8, file);
-        _printk("[rust_hello] file->f_mode: %d\n".as_ptr() as *const i8, (*file).f_mode);
-        _printk("[rust_hello] file->f_op: %px\n".as_ptr() as *const i8, (*file).f_op);
-        _printk("[rust_hello] file->f_op->read: %px\n".as_ptr() as *const i8, (*(*file).f_op).read);
-        _printk("[rust_hello] file->f_op->read_iter: %px\n".as_ptr() as *const i8, (*(*file).f_op).read_iter);
+        _printk(
+            "[rust_hello] file->f_mode: %d\n".as_ptr() as *const i8,
+            (*file).f_mode,
+        );
+        _printk(
+            "[rust_hello] file->f_op: %px\n".as_ptr() as *const i8,
+            (*file).f_op,
+        );
+        _printk(
+            "[rust_hello] file->f_op->read: %px\n".as_ptr() as *const i8,
+            (*(*file).f_op).read,
+        );
+        _printk(
+            "[rust_hello] file->f_op->read_iter: %px\n".as_ptr() as *const i8,
+            (*(*file).f_op).read_iter,
+        );
 
         let mut buf = [0u8; 128];
-        let mut pos = 0;
+        let mut pos = 8;
 
-        _printk("[rust_hello] buf: %px\n".as_ptr() as *const i8, buf.as_mut_ptr());
+        _printk(
+            "[rust_hello] buf: %px\n".as_ptr() as *const i8,
+            buf.as_mut_ptr(),
+        );
 
-        let read = core::mem::transmute::<usize, extern "C" fn(*mut bindings_generated::file, *mut u8, c_int, *mut usize) -> c_int>(
-            0xffffffffb6ce4170usize
-        )(file, buf.as_mut_ptr(), 128, &mut pos);
+        let verify = rw_verify_area(0, file, &mut pos, 8);
+        _printk("[rust_hello] verify: %d\n".as_ptr() as *const i8, verify);
+
         // let read = core::mem::transmute::<_, unsafe extern "C" fn(*mut bindings_generated::file, *mut i8, usize, *mut i64) -> isize>(
         //     (*(*file).f_op).read
         // )(file, buf.as_mut_ptr() as _, 1, &mut pos);
+        let read = kernel_read(file, buf.as_mut_ptr(), 1, &mut pos);
         _printk("[rust_hello] read: %d\n".as_ptr() as *const i8, read);
-
 
         // _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
         for i in 0..10 {
-            _printk("[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8, i, buf[i] as c_int);
+            _printk(
+                "[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8,
+                i,
+                buf[i] as c_int,
+            );
         }
 
-        let _  = filp_close(file, core::ptr::null_mut());
+        let _ = filp_close(file, core::ptr::null_mut());
 
         core::mem::transmute(0usize)
     }
@@ -274,7 +298,8 @@ fn lde_get_length(target: *mut c_void) -> i32 {
     unsafe {
         let mut insn_init: extern "C" fn(*mut insn, *mut c_void, i32, i32) -> c_int =
             core::mem::transmute(0xffffffff85db0810usize);
-        let mut insn_get_length: extern "C" fn(*mut insn) -> c_int = core::mem::transmute(0xffffffff85db1680usize);
+        let mut insn_get_length: extern "C" fn(*mut insn) -> c_int =
+            core::mem::transmute(0xffffffff85db1680usize);
 
         let mut insn: insn = core::mem::zeroed();
 
