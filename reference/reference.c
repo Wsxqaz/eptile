@@ -5,87 +5,29 @@
 
 MODULE_LICENSE("GPL");
 
-typedef int (*remote_function_f)(void *);
-
-struct remote_function_call {
-  struct task_struct  *p;
-  remote_function_f   func;
-  void                *info;
-  int                 ret;
-};
-
-
-static void remote_function(void *data)
-{
-  struct remote_function_call *tfc = data;
-  struct task_struct *p = tfc->p;
-
-  if (p) {
-    /* -EAGAIN */
-    if (task_cpu(p) != smp_processor_id())
-      return;
-
-    /*
-     * Now that we're on right CPU with IRQs disabled, we can test
-     * if we hit the right task without races.
-     */
-
-    tfc->ret = -ESRCH; /* No such (running) process */
-    if (p != current)
-      return;
-  }
-
-  tfc->ret = tfc->func(tfc->info);
-}
-
-
-int test_func(void *blob) {
-    printk(KERN_INFO "Hello, world!\n");
-    int cpu = get_cpu();
-    printk(KERN_INFO "[rust_hello] CPU: %d\n", cpu);
-    struct perf_cpu_context *cpuctx = this_cpu_ptr((void *)0x2fd20);
-    printk(KERN_INFO "[rust_hello] cpuctx: %px\n", cpuctx);
-    void * off = (void *)this_cpu_read(this_cpu_off);
-    printk(KERN_INFO "[rust_hello] this_cpu_off: %px\n", off);
-
-    struct idr *pmu_idr = (struct idr *)0xffffffff978a8c90;
-    struct pmu *tracepoint_pmu = idr_find(pmu_idr, PERF_TYPE_TRACEPOINT);
-    printk(KERN_INFO "[rust_hello] tracepoint_pmu: %px\n", tracepoint_pmu);
-
-    struct perf_cpu_pmu_context *cpc = per_cpu_ptr(tracepoint_pmu->cpu_pmu_context, 0);
-    printk(KERN_INFO "[rust_hello] cpc = %px\n", cpc);
-    struct perf_event_pmu_context *pmu_ctx = &cpc->epc;
-    printk(KERN_INFO "[rust_hello] pmu_ctx = %px\n", pmu_ctx);
-
-    struct min_heap event_heap = {
-      .data = cpuctx->heap,
-      .nr   = 0,
-      .size = cpuctx->heap_size
-    };
-
-    struct perf_event **evt = event_heap.data;
-
-    return 0;
-}
-
 int driver_entry(void)
 {
-    printk(KERN_INFO "Hello, world!\n");
-    int cpu = get_cpu();
-    printk(KERN_INFO "[rust_hello] CPU: %d\n", cpu);
-    struct perf_cpu_context *cpuctx = this_cpu_ptr((void *)0x2fd20);
-    printk(KERN_INFO "[rust_hello] cpuctx: %px\n", cpuctx);
-    void * off = (void *)this_cpu_read(this_cpu_off);
-    printk(KERN_INFO "[rust_hello] this_cpu_off: %px\n", off);
+    char * kallsyms_path = "/proc/kallsyms\0";
 
-    struct remote_function_call data = {
-      .p  = NULL,
-      .func = test_func,
-      .info = NULL,
-      .ret  = -ENXIO, /* No such CPU */
-    };
+    struct file *file = filp_open(kallsyms_path, O_RDONLY, 0);
 
-    smp_call_function_single(0, remote_function, &data, 1);
+    printk(KERN_INFO "[rust_hello] file = %px\n", file);
+    printk(KERN_INFO "[rust_hello] file->f_op = %px\n", file->f_op);
+    printk(KERN_INFO "[rust_hello] file->f_op->read = %px\n", file->f_op->read);
+    printk(KERN_INFO "[rust_hello] file->f_op->read_iter = %px\n", file->f_op->read_iter);
+
+    char * buf = kmalloc(4096, GFP_KERNEL);
+    loff_t pos = 0;
+
+    ssize_t (*vfs_read)(struct file *, char *, size_t, loff_t *) = (ssize_t (*)(struct file *, char *, size_t, loff_t *))0xffffffffba2e4170;
+
+    ssize_t ret = vfs_read(file, buf, 4096, &pos);
+    printk(KERN_INFO "[rust_hello] ret = %d\n", ret);
+
+    printk(KERN_INFO "[rust_hello] buf = %px\n", buf);
+    for (int i = 0; i < 10; i++) {
+      printk(KERN_INFO "buf[%d] = %c\n", i, buf[i]);
+    }
 
     return 0;
 }
