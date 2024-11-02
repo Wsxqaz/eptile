@@ -114,7 +114,8 @@ extern "C" {
 }
 
 fn read_kallsyms(fn_: *const u8) -> *const u8 {
-    let mut kallsyms_path: &str = "/proc/kallsyms\0";
+    // let mut kallsyms_path: &str = "/home/wsxqaz/Kbuild\0";
+    let mut kallsyms_path: &str = "/home/wsxqaz/kallsyms\0";
 
     unsafe {
         let file = filp_open(
@@ -142,7 +143,7 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
         );
 
         let mut buf = [0u8; 128];
-        let mut pos = 8;
+        let mut pos = 0;
 
         _printk(
             "[rust_hello] buf: %px\n".as_ptr() as *const i8,
@@ -154,27 +155,64 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
 
         // let read: Option<_> = (*(*file).f_op).read;
         // if let Some(read) = read {
-        //     let read_resp = read(file, buf.as_mut_ptr() as _, 8, &mut pos as *mut usize as _);
+        //     let read_resp = read(file, buf.as_mut_ptr() as _, 8, &mut pos as *mut i32 as _);
         //     _printk("[rust_hello] read_resp: %d\n".as_ptr() as *const i8, read_resp);
         // } else {
         //     _printk("[rust_hello] read is None\n".as_ptr() as *const i8);
         // }
 
-        // let read = kernel_read(file, buf.as_mut_ptr(), 1, &mut pos);
-        // _printk("[rust_hello] read: %px\n".as_ptr() as *const i8, read);
+        let read = kernel_read(file, buf.as_mut_ptr(), 64, &mut pos);
+        _printk("[rust_hello] read: %px\n".as_ptr() as *const i8, read);
 
-        // // _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
-        // for i in 0..5 {
-        //     _printk(
-        //         "[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8,
-        //         i,
-        //         buf[i] as c_int,
-        //     );
-        // }
+        // _printk("[rust_hello] buf: %s\n".as_ptr() as *const i8, buf);
+        for i in 0..64 {
+            _printk(
+                "[rust_hello] buf[%d]: %c\n".as_ptr() as *const i8,
+                i,
+                buf[i] as c_int,
+            );
+        }
 
-        let _ = filp_close(file, core::ptr::null_mut());
+        let mut i = 0;
+        loop {
+            if buf[i] as char == ' ' {
+                _printk("[rust_hello] found space at %d\n".as_ptr() as *const i8, i);
+                break;
+            }
+            if buf[i] as char == '\n' {
+                _printk("[rust_hello] found newline at %d\n".as_ptr() as *const i8, i);
+            }
+            i += 1;
+            if i >= 64 {
+                break;
+            }
+        };
 
-        core::mem::transmute(0usize)
+        //  let mut kallsyms: u64 = 0;
+        //  let mut j = 0;
+
+        //  while j < i {
+        //      let c = buf[j] as char;
+        //      let mut byte = 0;
+        //      if c >= '0' && c <= '9' {
+        //          byte = c as u8 - '0' as u8;
+        //      } else if c >= 'a' && c <= 'f' {
+        //          byte = c as u8 - 'a' as u8 + 10;
+        //      } else if c >= 'A' && c <= 'F' {
+        //          byte = c as u8 - 'A' as u8 + 10;
+        //      } else {
+        //          break;
+        //      }
+
+        //      kallsyms = kallsyms.wrapping_mul(16).wrapping_add(byte as u64);
+        //  }
+
+        _printk("[rust_hello] kallsyms: %px\n".as_ptr() as *const i8, kallsyms);
+
+
+        // let _ = filp_close(file, core::ptr::null_mut());
+
+        kallsyms as *const u8
     }
 }
 
