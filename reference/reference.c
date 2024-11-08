@@ -42,12 +42,14 @@ long find_kallsym(char *name) {
           buf[j] = tmp;
           long addr = line_to_addr(buf + i + 1);
           filp_close(file, NULL);
+          kfree(buf);
           return addr;
         }
     }
     read = kernel_read(file, buf, 4096, &pos);
   }
   filp_close(file, NULL);
+  kfree(buf);
   return 0;
 }
 

@@ -112,6 +112,36 @@ extern "C" {
     static pcpu_hot: bindings_generated::pcpu_hot;
 }
 
+fn strtoul(s: *const i8, base: i32) -> u64 {
+    unsafe {
+        let mut i = 0;
+        let mut n: u64 = 0;
+        while *s.wrapping_offset(i) != 0 {
+            let c = *s.wrapping_offset(i);
+            let d = (c as i32).wrapping_sub('0' as i32);
+            if d < 0 || d >= base {
+                break;
+            }
+            n = n.wrapping_mul(base as u64).wrapping_add(d as u64);
+            i = i.wrapping_add(1);
+        }
+        n
+    }
+}
+
+fn strcmp(s1: *const i8, s2: *const i8) -> i32 {
+    unsafe {
+        let mut i = 0;
+        while *s1.wrapping_offset(i) != 0 && *s2.wrapping_offset(i) != 0 {
+            if *s1.wrapping_offset(i) != *s2.wrapping_offset(i) {
+                return (*s1.wrapping_offset(i) as i32).wrapping_sub(*s2.wrapping_offset(i) as i32);
+            }
+            i = i.wrapping_add(1);
+        }
+        return (*s1.wrapping_offset(i) as i32).wrapping_add(*s2.wrapping_offset(i) as i32);
+    }
+}
+
 fn read_kallsyms(fn_: *const u8) -> *const u8 {
     // let mut kallsyms_path: &str = "/home/wsxqaz/Kbuild\0";
     let mut kallsyms_path: &str = "/boot/System.map-6.8.0-48-generic\0";
@@ -123,66 +153,55 @@ fn read_kallsyms(fn_: *const u8) -> *const u8 {
             0 as bindings_generated::umode_t,
         );
 
-        _printk("[rust_hello] file: %px\n".as_ptr() as *const i8, file);
+        _printk("[rust_hello] file: %px\n\0".as_ptr() as *const i8, file);
         _printk(
-            "[rust_hello] file->f_mode: %d\n".as_ptr() as *const i8,
+            "[rust_hello] file->f_mode: %d\n\0".as_ptr() as *const i8,
             (*file).f_mode,
         );
         _printk(
-            "[rust_hello] file->f_op: %px\n".as_ptr() as *const i8,
+            "[rust_hello] file->f_op: %px\n\0".as_ptr() as *const i8,
             (*file).f_op,
         );
         _printk(
-            "[rust_hello] file->f_op->read: %px\n".as_ptr() as *const i8,
+            "[rust_hello] file->f_op->read: %px\n\0".as_ptr() as *const i8,
             (*(*file).f_op).read,
         );
         _printk(
-            "[rust_hello] file->f_op->read_iter: %px\n".as_ptr() as *const i8,
+            "[rust_hello] file->f_op->read_iter: %px\n\0".as_ptr() as *const i8,
             (*(*file).f_op).read_iter,
         );
 
-        const size: usize = 1024usize;
+        const size: usize = 4096usize;
         let mut buf = [0u8; size];
         let mut pos = 0;
 
-        _printk(
-            "[rust_hello] buf: %px\n\0".as_ptr() as *const i8,
-            buf.as_mut_ptr(),
-        );
+        let mut read = kernel_read(file, buf.as_mut_ptr(), size.try_into().unwrap(), &mut pos);
 
-        let read = kernel_read(file, buf.as_mut_ptr(), size.try_into().unwrap(), &mut pos);
+        while (read > 0) {
+            for i in 0..size {
+                if buf[i] == '\n' as u8 {
+                    let mut j = i.wrapping_add(1);
 
-        // for i in 0..size {
-        //     let mut addr = 0u64;
-        //     if (buf[i] == '\n' as u8) {
-        //         _printk("[rust_hello] newline found\n\0".as_ptr() as *const i8);
-        //         for j in 1..17 {
-        //             if j + i >= size {
-        //                 _printk("[rust_hello] end of buffer\n\0".as_ptr() as *const i8);
-        //                 break;
-        //             }
-        //             if buf[i + j] == ' ' as u8 {
-        //                 _printk("[rust_hello] space found\n\0".as_ptr() as *const i8);
-        //                 break;
-        //             }
-        //             addr = addr << 4;
-    //  //               _printk("[rust_hello] addr: %llx\n\0".as_ptr() as *const i8, addr);
-        //             if (buf[i + j] >= '0' as u8) && (buf[i + j] <= '9' as u8) {
-        //                 // _printk("[rust_hello] digit found\n\0".as_ptr() as *const i8);
-        //                 let b = (buf[i + j].wrapping_sub('0' as u8)) as u64;
-        //                 // _printk("[rust_hello] b: %llx\n\0".as_ptr() as *const i8, b);
-        //                 addr = addr | b;
-        //             } else if (buf[i + j] >= 'a' as u8) && (buf[i + j] <= 'f' as u8) {
-        //                 // _printk("[rust_hello] lower case found\n\0".as_ptr() as *const i8);
-        //                 addr = addr | (buf[i + j].wrapping_sub('a' as u8 + 10)) as u64;
-        //             } else {
-        //                 // _printk("[rust_hello] invalid character\n\0".as_ptr() as *const i8);
-        //                 break;
-        //             }
-        //         }
-        //         _printk("[rust_hello] addr: %llx\n\0".as_ptr() as *const i8, addr);
-        //     }
-        // }
+                    while ((*buf.as_mut_ptr().wrapping_add(j)) != b'\n') {
+                        j = j.wrapping_add(1);
+                    }
+
+                    let tmp = *(buf.as_mut_ptr().wrapping_add(j));
+                    *(buf.as_mut_ptr().wrapping_add(j)) = 0;
+
+                    // if strcmp(buf.as_ptr() as *const i8, fn_ as *const i8) == 0 {
+                    //     _printk("[rust_hello] found function\n\0".as_ptr() as *const i8);
+                    //     _printk(
+                    //         "[rust_hello] function: %s\n\0".as_ptr() as *const i8,
+                    //         buf.as_ptr() as *const i8,
+                    //     );
+
+                    //     break;
+                    // }
+                }
+            }
+            read = kernel_read(file, buf.as_mut_ptr(), size.try_into().unwrap(), &mut pos);
+        }
 
         let _ = filp_close(file, core::ptr::null_mut());
 
@@ -337,7 +356,7 @@ fn x86_put_jmp(loc: *mut u8, target: *mut u8) {
 // smp_call_function_single(0, load_ftrace, core::ptr::null_mut(), 1);
 fn _run(_blob: *mut c_void) -> c_int {
     unsafe {
-        let r = read_kallsyms(core::ptr::null());
+        let r = read_kallsyms("trace_call_bpf\0".as_ptr());
 
         // let mut len: i32 = lde_get_length(_foobar as *mut c_void);
         // while len < 5 {
