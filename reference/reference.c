@@ -92,7 +92,7 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
 }
 
 int run_hook(void *data) {
-  long addr = find_kallsym("trace_call_bpf");
+  void * addr = (void *)find_kallsym("trace_call_bpf");
   printk(KERN_INFO "trace_call_bpf: %lx\n", addr);
 
   if (addr == 0) {
