@@ -11,7 +11,42 @@ long find_kallsym(char *name);
 int lde_get_length(const void *p);
 unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx);
 unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx);
-int run_hook(void *data);
+long run_hook(void *data);
+long write_kernel(long (* fn)(void *), void *arg);
+int _run(void *data);
+
+#ifndef X86_CR0_WP
+# define X86_CR0_WP (1UL << 16)
+#endif
+
+#ifndef X86_CR4_CET
+# define X86_CR4_CET (1UL << 23)
+#endif
+
+#ifndef __FORCE_ORDER
+# define __FORCE_ORDER "m"(*(unsigned int *)0x1000UL)
+#endif
+
+static inline unsigned long x86_read_cr0(void) {
+	unsigned long val;
+	asm volatile("mov %%cr0, %0\n" : "=r" (val) : __FORCE_ORDER);
+	return val;
+}
+
+static inline void x86_write_cr0(unsigned long val) {
+	asm volatile("mov %0, %%cr0\n": "+r" (val) : : "memory");
+}
+
+static inline unsigned long x86_read_cr4(void) {
+	unsigned long val;
+	asm volatile("mov %%cr4, %0\n" : "=r" (val) : __FORCE_ORDER);
+	return val;
+}
+
+static inline void x86_write_cr4(unsigned long val) {
+	asm volatile("mov %0, %%cr4\n": "+r" (val) : : "memory");
+}
+
 
 long line_to_addr(char *line) {
     return simple_strtoul(line, NULL, 16);
@@ -61,7 +96,7 @@ long find_kallsym(char *name) {
           return addr;
         }
     }
-  read = kernel_read(file, buf, 4096, &pos);
+    read = kernel_read(file, buf, 4096, &pos);
   }
   filp_close(file, NULL);
   kfree(buf);
@@ -91,9 +126,32 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   return original_trace_call_bpf(call, ctx);
 }
 
-int run_hook(void *data) {
+long write_kernel(long (* fn)(void *), void *arg) {
+	long res = 0, cr0, cr4;
+
+	asm volatile ("cli\n");
+
+	cr0 = x86_read_cr0();
+	cr4 = x86_read_cr4();
+
+	if (cr4 & X86_CR4_CET)
+		x86_write_cr4(cr4 & ~X86_CR4_CET);
+	x86_write_cr0(cr0 & ~X86_CR0_WP);
+
+	res = fn(arg);
+
+	x86_write_cr0(cr0);
+	if (cr4 & X86_CR4_CET)
+		x86_write_cr4(cr4);
+
+	asm volatile ("sti\n");
+
+	return res;
+}
+
+long run_hook(void *data) {
   void * addr = (void *)find_kallsym("trace_call_bpf");
-  printk(KERN_INFO "trace_call_bpf: %lx\n", addr);
+  printk(KERN_INFO "trace_call_bpf: %px\n", addr);
 
   if (addr == 0) {
     printk(KERN_INFO "trace_call_bpf not found\n");
@@ -115,10 +173,18 @@ int run_hook(void *data) {
   return 0;
 }
 
+int _run(void *data) {
+  write_kernel(
+    run_hook,
+    NULL
+  );
+
+  return 0;
+}
+
 static int driver_entry(void)
 {
-  run_hook(NULL);
-
+  stop_machine(_run, NULL, NULL);
   return 0;
 }
 
