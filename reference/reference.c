@@ -11,8 +11,8 @@ long find_kallsym(char *name);
 int lde_get_length(const void *p);
 unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx);
 unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx);
-long run_hook(void *data);
-long write_kernel(long (* fn)(void *), void *arg);
+long run_hook(void * addr, int len);
+long write_kernel(void * addr, int len);
 int _run(void *data);
 
 #ifndef X86_CR0_WP
@@ -126,7 +126,7 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   return original_trace_call_bpf(call, ctx);
 }
 
-long write_kernel(long (* fn)(void *), void *arg) {
+long write_kernel(void * addr, int len) {
 	long res = 0, cr0, cr4;
 
 	asm volatile ("cli\n");
@@ -138,7 +138,7 @@ long write_kernel(long (* fn)(void *), void *arg) {
 		x86_write_cr4(cr4 & ~X86_CR4_CET);
 	x86_write_cr0(cr0 & ~X86_CR0_WP);
 
-	res = fn(arg);
+	res = run_hook(addr, len);
 
 	x86_write_cr0(cr0);
 	if (cr4 & X86_CR4_CET)
@@ -149,7 +149,32 @@ long write_kernel(long (* fn)(void *), void *arg) {
 	return res;
 }
 
-long run_hook(void *data) {
+long run_hook(void * addr, int len ) {
+  memcpy(addr, original_trace_call_bpf, len);
+  x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
+  x86_put_jmp(addr, addr, hook_trace_call_bpf);
+
+  return 0;
+}
+
+struct args {
+  void *addr;
+  int len;
+};
+
+int _run(void *data) {
+  struct args *args = (struct args *)data;
+  write_kernel(
+    args->addr,
+    args->len
+  );
+
+  return 0;
+}
+
+
+static int driver_entry(void)
+{
   void * addr = (void *)find_kallsym("trace_call_bpf");
   printk(KERN_INFO "trace_call_bpf: %px\n", addr);
 
@@ -165,26 +190,12 @@ long run_hook(void *data) {
     len += lde_get_length((void *)(addr + len));
   }
   printk(KERN_INFO "trace_call_bpf len: %d\n", len);
+  struct args args = {
+    .addr = addr,
+    .len = len
+  };
+  stop_machine(_run, &args, NULL);
 
-  memcpy(addr, original_trace_call_bpf, len);
-  x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
-  x86_put_jmp(addr, addr, hook_trace_call_bpf);
-
-  return 0;
-}
-
-int _run(void *data) {
-  write_kernel(
-    run_hook,
-    NULL
-  );
-
-  return 0;
-}
-
-static int driver_entry(void)
-{
-  stop_machine(_run, NULL, NULL);
   return 0;
 }
 
