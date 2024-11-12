@@ -1,1 +1,3 @@
-obj-m := reference.o
+obj-m := reference.o stub.o
+
+ccflags-y += $(call cc-option,-fcf-protection=none)

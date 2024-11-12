@@ -6,6 +6,8 @@
 
 MODULE_LICENSE("GPL");
 
+extern void *KHOOK_STUB_hook_noref;
+
 long line_to_addr(char *line);
 long find_kallsym(char *name);
 int lde_get_length(const void *p);
@@ -150,9 +152,13 @@ long write_kernel(void * addr, int len) {
 }
 
 long run_hook(void * addr, int len ) {
+  void *p = KHOOK_STUB_hook_noref;
+  while (*(int *)p != 0x7a7a7a7a) p++;
+  *(long *)p = (long)addr;
+
   memcpy(addr, original_trace_call_bpf, len);
   x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
-  x86_put_jmp(addr, addr, hook_trace_call_bpf);
+  x86_put_jmp(addr, addr, KHOOK_STUB_hook_noref);
 
   return 0;
 }
