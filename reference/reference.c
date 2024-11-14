@@ -200,7 +200,7 @@ static int driver_entry(void)
     .addr = addr,
     .len = len
   };
-  stop_machine(_run, &args, NULL);
+  // stop_machine(_run, &args, NULL);
 
   return 0;
 }

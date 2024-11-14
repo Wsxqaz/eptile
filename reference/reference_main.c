@@ -3,8 +3,10 @@
 #include <linux/init.h>
 #include <linux/stop_machine.h>
 #include <asm/insn.h>
+#include <linux/trace_events.h>
 
 
+extern void *KHOOK_STUB_hook_noref_end;
 extern void *KHOOK_STUB_hook_noref;
 
 
@@ -125,7 +127,10 @@ unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx) {
 
 unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   printk(KERN_INFO "hook_trace_call_bpf\n");
-  return original_trace_call_bpf(call, ctx);
+  printk(KERN_INFO "call: %px\n", call);
+  printk(KERN_INFO "ctx: %px\n", ctx);
+  printk(KERN_INFO "call->class->system: %s\n", call->class->system);
+  return 0;
 }
 
 long write_kernel(void * addr, int len) {
@@ -152,13 +157,19 @@ long write_kernel(void * addr, int len) {
 }
 
 long run_hook(void * addr, int len ) {
-  void *p = KHOOK_STUB_hook_noref;
-  while (*(int *)p != 0x7a7a7a7a) p++;
-  *(long *)p = (long)addr;
 
+  for (int i = 0; i < len + 5; i++) {
+    printk(KERN_INFO "original [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+  }
   memcpy(addr, original_trace_call_bpf, len);
+  for (int i = 0; i < len + 5; i++) {
+    printk(KERN_INFO "pre [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+  }
   x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
-  x86_put_jmp(addr, addr, KHOOK_STUB_hook_noref);
+  for (int i = 0; i < len + 5; i++) {
+    printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+  }
+  x86_put_jmp(addr, addr, hook_trace_call_bpf);
 
   return 0;
 }
