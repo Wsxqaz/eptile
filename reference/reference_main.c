@@ -18,6 +18,7 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx);
 long run_hook(void * addr, int len);
 long write_kernel(void * addr, int len);
 int _run(void *data);
+int reset(void *data);
 
 #ifndef X86_CR0_WP
 # define X86_CR0_WP (1UL << 16)
@@ -121,7 +122,7 @@ int lde_get_length(const void *p) {
 }
 
 unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx) {
-  asm(".rept 0x10\n.byte 0\n.endr\n");
+  asm(".rept 0x80\n.byte 0\n.endr\n");
   return 0;
 }
 
@@ -130,7 +131,7 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   printk(KERN_INFO "call: %px\n", call);
   printk(KERN_INFO "ctx: %px\n", ctx);
   printk(KERN_INFO "call->class->system: %s\n", call->class->system);
-  return 0;
+  return original_trace_call_bpf(call, ctx);
 }
 
 long write_kernel(void * addr, int len) {
@@ -156,19 +157,22 @@ long write_kernel(void * addr, int len) {
 	return res;
 }
 
-long run_hook(void * addr, int len ) {
+int ORIG_LEN = 0;
 
-  for (int i = 0; i < len + 5; i++) {
-    printk(KERN_INFO "original [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+long run_hook(void * addr, int len ) {
+  ORIG_LEN = len;
+  for (int i = 0; i < len; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)addr)[i]);
+    *((unsigned char *)original_trace_call_bpf + i) = ((unsigned char *)addr)[i];
   }
-  memcpy(addr, original_trace_call_bpf, len);
-  for (int i = 0; i < len + 5; i++) {
-    printk(KERN_INFO "pre [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
-  }
-  x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
-  for (int i = 0; i < len + 5; i++) {
-    printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
-  }
+
+  // for (int i = 0; i < len + 6; i++) {
+  //   printk(KERN_INFO "pre [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+  // }
+  // x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
+  // for (int i = 0; i < len + 6; i++) {
+  //   printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+  // }
   x86_put_jmp(addr, addr, hook_trace_call_bpf);
 
   return 0;
@@ -216,9 +220,20 @@ static int driver_entry(void)
   return 0;
 }
 
+int reset(void *data) {
+  printk(KERN_INFO "trace_call_bpf: %px\n", data);
+  for (int i = 0; i < ORIG_LEN; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
+    ((unsigned char *)data)[i] = ((unsigned char *)original_trace_call_bpf)[i];
+  }
+  return 0;
+}
+
 static void driver_exit(void)
 {
-    printk(KERN_INFO "Goodbye, world!\n");
+  void * addr = (void *)find_kallsym("trace_call_bpf");
+  stop_machine(reset, addr, NULL);
+  printk(KERN_INFO "Goodbye, world!\n");
 }
 
 MODULE_LICENSE("GPL");
