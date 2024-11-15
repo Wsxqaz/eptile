@@ -161,18 +161,20 @@ int ORIG_LEN = 0;
 
 long run_hook(void * addr, int len ) {
   ORIG_LEN = len;
+
   for (int i = 0; i < len; i++) {
     printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)addr)[i]);
-    *((unsigned char *)original_trace_call_bpf + i) = ((unsigned char *)addr)[i];
+  }
+  for (int i = 0; i < len + 6; i++) {
+    printk(KERN_INFO "pre orig [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
   }
 
-  // for (int i = 0; i < len + 6; i++) {
-  //   printk(KERN_INFO "pre [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
-  // }
-  // x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
-  // for (int i = 0; i < len + 6; i++) {
-  //   printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
-  // }
+  memcpy(original_trace_call_bpf, addr, len);
+  x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
+
+  for (int i = 0; i < len + 6; i++) {
+    printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_trace_call_bpf)[i]);
+  }
   x86_put_jmp(addr, addr, hook_trace_call_bpf);
 
   return 0;
@@ -222,9 +224,13 @@ static int driver_entry(void)
 
 int reset(void *data) {
   printk(KERN_INFO "trace_call_bpf: %px\n", data);
+
   for (int i = 0; i < ORIG_LEN; i++) {
     printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
-    ((unsigned char *)data)[i] = ((unsigned char *)original_trace_call_bpf)[i];
+  }
+  // memcpy(data, original_trace_call_bpf, ORIG_LEN);
+  for (int i = 0; i < ORIG_LEN; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
   }
   return 0;
 }
