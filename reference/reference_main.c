@@ -13,12 +13,13 @@ extern void *KHOOK_STUB_hook_noref;
 long line_to_addr(char *line);
 long find_kallsym(char *name);
 int lde_get_length(const void *p);
-unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx);
+void original_trace_call_bpf(struct trace_event_call *call, void *ctx);
 unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx);
 long run_hook(void * addr, int len);
-long write_kernel(void * addr, int len);
+long write_kernel(void * addr, int len, long (*fn)(void *, int));
 int _run(void *data);
-int reset(void *data);
+long __reset(void *data, int len);
+int _reset(void *data);
 
 #ifndef X86_CR0_WP
 # define X86_CR0_WP (1UL << 16)
@@ -121,9 +122,8 @@ int lde_get_length(const void *p) {
   return insn.length;
 }
 
-unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx) {
+void original_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   asm(".rept 0x80\n.byte 0\n.endr\n");
-  return 0;
 }
 
 unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
@@ -131,10 +131,10 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   printk(KERN_INFO "call: %px\n", call);
   printk(KERN_INFO "ctx: %px\n", ctx);
   printk(KERN_INFO "call->class->system: %s\n", call->class->system);
-  return original_trace_call_bpf(call, ctx);
+  return ((int(*)(void *, void *))(original_trace_call_bpf))(call, ctx);
 }
 
-long write_kernel(void * addr, int len) {
+long write_kernel(void * addr, int len, long (*fn)(void *, int)) {
 	long res = 0, cr0, cr4;
 
 	asm volatile ("cli\n");
@@ -146,7 +146,7 @@ long write_kernel(void * addr, int len) {
 		x86_write_cr4(cr4 & ~X86_CR4_CET);
 	x86_write_cr0(cr0 & ~X86_CR0_WP);
 
-	res = run_hook(addr, len);
+	res = fn(addr, len);
 
 	x86_write_cr0(cr0);
 	if (cr4 & X86_CR4_CET)
@@ -189,7 +189,8 @@ int _run(void *data) {
   struct args *args = (struct args *)data;
   write_kernel(
     args->addr,
-    args->len
+    args->len,
+    run_hook
   );
 
   return 0;
@@ -222,14 +223,23 @@ static int driver_entry(void)
   return 0;
 }
 
-int reset(void *data) {
+int _reset(void *data) {
+  struct args *args = (struct args *)data;
+
+  return write_kernel(args->addr, args->len, __reset);
+}
+
+long __reset(void *data, int len) {
   printk(KERN_INFO "trace_call_bpf: %px\n", data);
 
-  for (int i = 0; i < ORIG_LEN; i++) {
+  for (int i = 0; i < len; i++) {
     printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
   }
-  // memcpy(data, original_trace_call_bpf, ORIG_LEN);
-  for (int i = 0; i < ORIG_LEN; i++) {
+  // memcpy(data, original_trace_call_bpf, len);
+  for (int i = 0; i < len; i++) {
+    ((unsigned char *)data)[i] = ((unsigned char *)original_trace_call_bpf)[i];
+  }
+  for (int i = 0; i < len; i++) {
     printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
   }
   return 0;
@@ -238,7 +248,11 @@ int reset(void *data) {
 static void driver_exit(void)
 {
   void * addr = (void *)find_kallsym("trace_call_bpf");
-  stop_machine(reset, addr, NULL);
+  struct args args = {
+     .addr = addr,
+     .len = ORIG_LEN
+   };
+  stop_machine(_reset, &args, NULL);
   printk(KERN_INFO "Goodbye, world!\n");
 }
 
