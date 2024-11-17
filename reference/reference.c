@@ -8,6 +8,14 @@
 extern void *KHOOK_STUB_hook_noref;
 
 
+extern void __this_cpu_preempt_check(const char *op);
+extern void __rcu_read_lock(void);
+extern void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
+                         int trylock, int read, int check,
+                         struct lockdep_map *nest_lock, unsigned long ip);
+extern int rcu_read_lock_held(void);
+
+
 long line_to_addr(char *line);
 long find_kallsym(char *name);
 int lde_get_length(const void *p);
