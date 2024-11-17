@@ -4,10 +4,12 @@
 #include <linux/stop_machine.h>
 #include <asm/insn.h>
 #include <linux/trace_events.h>
+#include <linux/rcupdate.h>
 
 
-extern void *KHOOK_STUB_hook_noref_end;
-extern void *KHOOK_STUB_hook_noref;
+extern void __this_cpu_preempt_check(const char *op);
+extern void __rcu_read_lock(void);
+extern int rcu_read_lock_held(void);
 
 
 long line_to_addr(char *line);
@@ -131,6 +133,22 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   printk(KERN_INFO "call: %px\n", call);
   printk(KERN_INFO "ctx: %px\n", ctx);
   printk(KERN_INFO "call->class->system: %s\n", call->class->system);
+
+  int * bpf_prog_active = (int *)find_kallsym("bpf_prog_active");
+  int ret = __this_cpu_inc_return(*bpf_prog_active);
+
+  if (ret) {
+    rcu_read_lock();
+    rcu_lock_acquire(&rcu_lock_map);
+    struct bpf_prog_stats *stats;
+    unsigned int flags;
+
+    struct bpf_prog
+
+    stats = this_cpu_ptr(call->prog_array
+  }
+
+
   return ((int(*)(void *, void *))(original_trace_call_bpf))(call, ctx);
 }
 
