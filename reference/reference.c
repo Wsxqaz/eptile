@@ -4,10 +4,6 @@
 #include <linux/stop_machine.h>
 #include <asm/insn.h>
 
-
-extern void *KHOOK_STUB_hook_noref;
-
-
 extern void __this_cpu_preempt_check(const char *op);
 extern void __rcu_read_lock(void);
 extern void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
