@@ -36,6 +36,8 @@ int _run(void *data);
 long __reset(void *data, int len);
 int _reset(void *data);
 
+int * _bpf_prog_active;
+
 #ifndef X86_CR0_WP
 # define X86_CR0_WP (1UL << 16)
 #endif
@@ -149,8 +151,7 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   printk(KERN_INFO "call->class->system: %s\n", call->class->system);
 
 
-  int * bpf_prog_active = (int *)find_kallsym("bpf_prog_active");
-  int ret = __this_cpu_inc_return(*bpf_prog_active);
+  int ret = __this_cpu_inc_return(*_bpf_prog_active);
 
   if (ret != 1) {
     rcu_read_lock();
@@ -165,7 +166,7 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   rcu_read_unlock();
 
 out:
-  __this_cpu_dec(*bpf_prog_active);
+  __this_cpu_dec(*_bpf_prog_active);
 
   return ret;
 }
@@ -236,6 +237,7 @@ int _run(void *data) {
 static int driver_entry(void)
 {
   void * addr = (void *)find_kallsym("trace_call_bpf");
+  _bpf_prog_active = (int *)find_kallsym("bpf_prog_active");
   printk(KERN_INFO "trace_call_bpf: %px\n", addr);
 
   if (addr == 0) {
