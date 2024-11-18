@@ -5,11 +5,24 @@
 #include <asm/insn.h>
 #include <linux/trace_events.h>
 #include <linux/rcupdate.h>
+#include <linux/bpf.h>
+#include <linux/filter.h>
 
 
 extern void __this_cpu_preempt_check(const char *op);
 extern void __rcu_read_lock(void);
 extern int rcu_read_lock_held(void);
+
+void notrace bpf_prog_inc_misses_counter(struct bpf_prog *prog)
+{
+	struct bpf_prog_stats *stats;
+	unsigned int flags;
+
+	stats = this_cpu_ptr(prog->stats);
+	flags = u64_stats_update_begin_irqsave(&stats->syncp);
+	u64_stats_inc(&stats->misses);
+	u64_stats_update_end_irqrestore(&stats->syncp, flags);
+}
 
 
 long line_to_addr(char *line);
@@ -128,28 +141,33 @@ void original_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   asm(".rept 0x80\n.byte 0\n.endr\n");
 }
 
+
 unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
   printk(KERN_INFO "hook_trace_call_bpf\n");
   printk(KERN_INFO "call: %px\n", call);
   printk(KERN_INFO "ctx: %px\n", ctx);
   printk(KERN_INFO "call->class->system: %s\n", call->class->system);
 
+
   int * bpf_prog_active = (int *)find_kallsym("bpf_prog_active");
   int ret = __this_cpu_inc_return(*bpf_prog_active);
 
-  if (ret) {
+  if (ret != 1) {
     rcu_read_lock();
-    rcu_lock_acquire(&rcu_lock_map);
-    struct bpf_prog_stats *stats;
-    unsigned int flags;
-
-    struct bpf_prog
-
-    stats = this_cpu_ptr(call->prog_array
+    bpf_prog_inc_misses_counters(rcu_dereference(call->prog_array));
+    rcu_read_unlock();
+    ret = 0;
+    goto out;
   }
 
+  rcu_read_lock();
+  ret = bpf_prog_run_array(rcu_dereference(call->prog_array), ctx, bpf_prog_run);
+  rcu_read_unlock();
 
-  return ((int(*)(void *, void *))(original_trace_call_bpf))(call, ctx);
+out:
+  __this_cpu_dec(*bpf_prog_active);
+
+  return ret;
 }
 
 long write_kernel(void * addr, int len, long (*fn)(void *, int)) {
@@ -224,6 +242,7 @@ static int driver_entry(void)
     printk(KERN_INFO "trace_call_bpf not found\n");
     return 0;
   }
+
 
   int len = lde_get_length((void *)addr);
   printk(KERN_INFO "trace_call_bpf len: %d\n", len);
