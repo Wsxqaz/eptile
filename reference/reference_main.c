@@ -33,8 +33,8 @@ unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx);
 long run_hook(void * addr, int len);
 long write_kernel(void * addr, int len, long (*fn)(void *, int));
 int _run(void *data);
-long __reset(void *data, int len);
-int _reset(void *data);
+long hook_reset(void *data, int len);
+int _hook_reset(void *data);
 
 int * _bpf_prog_active;
 
@@ -222,7 +222,7 @@ struct args {
   int len;
 };
 
-int _run(void *data) {
+int __run(void *data) {
   struct args *args = (struct args *)data;
   write_kernel(
     args->addr,
@@ -257,18 +257,18 @@ static int driver_entry(void)
     .addr = addr,
     .len = len
   };
-  stop_machine(_run, &args, NULL);
+  stop_machine(__run, &args, NULL);
 
   return 0;
 }
 
-int _reset(void *data) {
+int _hook_reset(void *data) {
   struct args *args = (struct args *)data;
 
-  return write_kernel(args->addr, args->len, __reset);
+  return write_kernel(args->addr, args->len, hook_reset);
 }
 
-long __reset(void *data, int len) {
+long hook_reset(void *data, int len) {
   printk(KERN_INFO "trace_call_bpf: %px\n", data);
 
   for (int i = 0; i < len; i++) {
@@ -291,7 +291,7 @@ static void driver_exit(void)
      .addr = addr,
      .len = ORIG_LEN
    };
-  stop_machine(_reset, &args, NULL);
+  stop_machine(_hook_reset, &args, NULL);
   printk(KERN_INFO "Goodbye, world!\n");
 }
 
