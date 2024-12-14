@@ -1,25 +1,22 @@
 #include <linux/module.h>
+#include <net/sock.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/stop_machine.h>
 #include <asm/insn.h>
 
-extern void __this_cpu_preempt_check(const char *op);
-extern void __rcu_read_lock(void);
-extern void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
-                         int trylock, int read, int check,
-                         struct lockdep_map *nest_lock, unsigned long ip);
-extern int rcu_read_lock_held(void);
-
-
 long line_to_addr(char *line);
 long find_kallsym(char *name);
 int lde_get_length(const void *p);
-unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx);
-unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx);
+void original_security_socket_connect(void);
+unsigned int hook_security_socket_connect(struct socket *sock, struct sockaddr *address, int addrlen);
 long run_hook(void * addr, int len);
-long write_kernel(void * addr, int len);
+long write_kernel(void * addr, int len, long (*fn)(void *, int));
 int _run(void *data);
+long hook_reset(void *data, int len);
+int _hook_reset(void *data);
+
+int * _bpf_prog_active;
 
 #ifndef X86_CR0_WP
 # define X86_CR0_WP (1UL << 16)
@@ -122,17 +119,25 @@ int lde_get_length(const void *p) {
   return insn.length;
 }
 
-unsigned int original_trace_call_bpf(struct trace_event_call *call, void *ctx) {
-  asm(".rept 0x10\n.byte 0\n.endr\n");
+void original_security_socket_connect() {
+  asm(".rept 0x80\n.byte 0\n.endr\n");
+}
+
+
+unsigned int hook_security_socket_connect(
+  struct socket *sock,
+  struct sockaddr *address,
+  int addrlen
+) {
+  printk(KERN_INFO "hook_security_socket_connect\n");
+  printk(KERN_INFO "sock: %px\n", sock);
+  printk(KERN_INFO "address: %px\n", address);
+  printk(KERN_INFO "addrlen: %d\n", addrlen);
+
   return 0;
 }
 
-unsigned int hook_trace_call_bpf(struct trace_event_call *call, void *ctx) {
-  printk(KERN_INFO "hook_trace_call_bpf\n");
-  return original_trace_call_bpf(call, ctx);
-}
-
-long write_kernel(void * addr, int len) {
+long write_kernel(void * addr, int len, long (*fn)(void *, int)) {
 	long res = 0, cr0, cr4;
 
 	asm volatile ("cli\n");
@@ -144,7 +149,7 @@ long write_kernel(void * addr, int len) {
 		x86_write_cr4(cr4 & ~X86_CR4_CET);
 	x86_write_cr0(cr0 & ~X86_CR0_WP);
 
-	res = run_hook(addr, len);
+	res = fn(addr, len);
 
 	x86_write_cr0(cr0);
 	if (cr4 & X86_CR4_CET)
@@ -155,14 +160,25 @@ long write_kernel(void * addr, int len) {
 	return res;
 }
 
-long run_hook(void * addr, int len ) {
-  void *p = KHOOK_STUB_hook_noref;
-  while (*(int *)p != 0x7a7a7a7a) p++;
-  *(long *)p = (long)addr;
+int ORIG_LEN = 0;
 
-  memcpy(addr, original_trace_call_bpf, len);
-  x86_put_jmp(original_trace_call_bpf + len, original_trace_call_bpf + len, addr + len);
-  x86_put_jmp(addr, addr, KHOOK_STUB_hook_noref);
+long run_hook(void * addr, int len ) {
+  ORIG_LEN = len;
+
+  for (int i = 0; i < len; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)addr)[i]);
+  }
+  for (int i = 0; i < len + 6; i++) {
+    printk(KERN_INFO "pre orig [%d]: 0x%02x ", i, ((unsigned char *)original_security_socket_connect)[i]);
+  }
+
+  memcpy(original_security_socket_connect, addr, len);
+  x86_put_jmp(original_security_socket_connect + len, original_security_socket_connect + len, addr + len);
+
+  for (int i = 0; i < len + 6; i++) {
+    printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_security_socket_connect)[i]);
+  }
+  x86_put_jmp(addr, addr, hook_security_socket_connect);
 
   return 0;
 }
@@ -172,11 +188,12 @@ struct args {
   int len;
 };
 
-int _run(void *data) {
+int __run(void *data) {
   struct args *args = (struct args *)data;
   write_kernel(
     args->addr,
-    args->len
+    args->len,
+    run_hook
   );
 
   return 0;
@@ -185,33 +202,62 @@ int _run(void *data) {
 
 static int driver_entry(void)
 {
-  void * addr = (void *)find_kallsym("trace_call_bpf");
-  printk(KERN_INFO "trace_call_bpf: %px\n", addr);
+  void * addr = (void *)find_kallsym("security_socket_connect");
+  printk(KERN_INFO "security_socket_connect: %px\n", addr);
 
   if (addr == 0) {
-    printk(KERN_INFO "trace_call_bpf not found\n");
+    printk(KERN_INFO "security_socket_connect not found\n");
     return 0;
   }
 
+
   int len = lde_get_length((void *)addr);
-  printk(KERN_INFO "trace_call_bpf len: %d\n", len);
+  printk(KERN_INFO "security_socket_connect len: %d\n", len);
   while (len < 5) {
-    printk(KERN_INFO "trace_call_bpf len: %d\n", len);
+    printk(KERN_INFO "security_socket_connect len: %d\n", len);
     len += lde_get_length((void *)(addr + len));
   }
-  printk(KERN_INFO "trace_call_bpf len: %d\n", len);
+  printk(KERN_INFO "security_socket_connect len: %d\n", len);
   struct args args = {
     .addr = addr,
     .len = len
   };
-  // stop_machine(_run, &args, NULL);
+  stop_machine(__run, &args, NULL);
 
+  return 0;
+}
+
+int _hook_reset(void *data) {
+  struct args *args = (struct args *)data;
+
+  return write_kernel(args->addr, args->len, hook_reset);
+}
+
+long hook_reset(void *data, int len) {
+  printk(KERN_INFO "trace_call_bpf: %px\n", data);
+
+  for (int i = 0; i < len; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
+  }
+  // memcpy(data, original_trace_call_bpf, len);
+  for (int i = 0; i < len; i++) {
+    ((unsigned char *)data)[i] = ((unsigned char *)original_security_socket_connect)[i];
+  }
+  for (int i = 0; i < len; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)data)[i]);
+  }
   return 0;
 }
 
 static void driver_exit(void)
 {
-    printk(KERN_INFO "Goodbye, world!\n");
+  void * addr = (void *)find_kallsym("security_socket_connect");
+  struct args args = {
+     .addr = addr,
+     .len = ORIG_LEN
+   };
+  stop_machine(_hook_reset, &args, NULL);
+  printk(KERN_INFO "Goodbye, world!\n");
 }
 
 MODULE_LICENSE("GPL");
