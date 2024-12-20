@@ -1,0 +1,6 @@
+obj-m := reference.o
+reference-y := reference_main.o stub.o
+
+ccflags-y := $(call cc-option, -fcf-protection=none)
+
+OBJECT_FILES_NON_STANDARD_stub.o += y
