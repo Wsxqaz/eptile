@@ -30,12 +30,8 @@ static int _read_file(struct file *file) {
   p = m->op->start(m, &m->index);
   m->count = 0;
 
-  int prev_count = -1;
-  while (m->count < m->size && m->count != prev_count) {
-    int err = m->op->show(m, p);
-    p = m->op->next(m, p, &m->index);
-    prev_count = m->count;
-  }
+  int err = m->op->show(m, p);
+  p = m->op->next(m, p, &m->index);
 
   mutex_unlock(&m->lock);
 
