@@ -61,49 +61,60 @@ static inline void x86_put_jmp(void *a, void *f, void *t) {
 	*(( int *)(a + 1)) = (long)(t - (f + 5));
 }
 
-long find_kallsym(char *name) {
-  char * kallsyms_path = "/home/wsxqaz/kallsyms\0";
-  struct file *file = filp_open(kallsyms_path, O_RDONLY, 0);
+static int _read_file(struct file *file) {
+  struct seq_file *m = file->private_data;
 
-  printk(KERN_INFO "file: %p\n", file);
-  printk(KERN_INFO "file->f_op: %p\n", file->f_op);
-  printk(KERN_INFO "file->f_op->read: %p\n", file->f_op->read);
-  printk(KERN_INFO "file->f_op->read_iter: %p\n", file->f_op->read_iter);
+  mutex_lock(&m->lock);
 
-  char * buf = kmalloc(4096, GFP_KERNEL);
-  long long pos = 0;
-
-  int read = kernel_read(file, buf, 4096, &pos);
-  while (read > 0) {
-    for (int i = 0; i < 4096; i++) {
-        if (buf[i] == '\n') {
-          int j = i + 1;
-          while (buf[j] != '\n') {
-            j++;
-          }
-          char tmp = buf[j];
-          buf[j] = '\0';
-          if (i + 20 >= 4096) {
-            buf[j] = tmp;
-            continue;
-          }
-          // printk(KERN_INFO "line: %s\n", buf + i + 20);
-          if (strcmp(buf + i + 20, name) != 0) {
-            buf[j] = tmp;
-            continue;
-          }
-          buf[j] = tmp;
-          long addr = line_to_addr(buf + i + 1);
-          filp_close(file, NULL);
-          kfree(buf);
-          return addr;
-        }
-    }
-    read = kernel_read(file, buf, 4096, &pos);
+  if (!m->buf) {
+    m->buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+    m->size = PAGE_SIZE;
   }
-  filp_close(file, NULL);
-  kfree(buf);
-  return 0;
+
+  void * p;
+  p = m->op->start(m, &m->index);
+  m->count = 0;
+
+  int err = m->op->show(m, p);
+  p = m->op->next(m, p, &m->index);
+
+  mutex_unlock(&m->lock);
+
+  return m->count;
+}
+
+long find_kallsym(char *name) {
+    struct file *file;
+    ssize_t bytes_read;
+    char *line;
+    long addr = 0;
+
+    file = filp_open("/proc/kallsyms", O_RDONLY, 0);
+    if (IS_ERR(file)) {
+        pr_err("Failed to open /proc/kallsyms\n");
+        return PTR_ERR(file);
+    }
+
+    struct seq_file *m = file->private_data;
+
+    int read = _read_file(file);
+
+    while (read > 0) {
+      int i = 0;
+      while (m->buf[i] != '\n' || m->buf[i] == '\0' || m->buf[i] == '\t') {
+        i++;
+      }
+      m->buf[i] = '\0';
+      if (strcmp(m->buf + 19, name) == 0) {
+        addr = line_to_addr(m->buf);
+        break;
+      }
+      read = _read_file(file);
+    }
+
+    filp_close(file, NULL);
+    kfree(line);
+    return addr;
 }
 
 int lde_get_length(const void *p) {
