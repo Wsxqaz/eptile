@@ -1,5 +1,4 @@
 #include <asm/insn.h>
-#include <asm/uaccess.h>      // For set_fs, get_fs, KERNEL_DS, USER_DS
 #include <linux/bpf.h>
 #include <linux/filter.h>
 #include <linux/fs.h>
@@ -40,34 +39,6 @@ static int _read_file(struct file *file) {
 
 long line_to_addr(char *line) {
     return simple_strtoul(line, NULL, 16);
-}
-
-static int read_kallsyms(void) {
-    struct file *file;
-    ssize_t bytes_read;
-
-    file = filp_open("/proc/kallsyms", O_RDONLY, 0);
-    if (IS_ERR(file)) {
-        pr_err("Failed to open /proc/kallsyms\n");
-        return PTR_ERR(file);
-    }
-
-    struct seq_file *m = file->private_data;
-
-    int read = _read_file(file);
-    pr_info("read: %d\n", read);
-    pr_info("m->buf: %px\n", m->buf);
-    pr_info("m->buf: %s\n", m->buf);
-
-    while (read > 0) {
-      read = _read_file(file);
-      pr_info("m->buf: %px\n", m->buf);
-      pr_info("m->buf: %s\n", m->buf);
-    }
-
-
-    filp_close(file, NULL);
-    return 0;
 }
 
 long find_kallsym(char *name) {
