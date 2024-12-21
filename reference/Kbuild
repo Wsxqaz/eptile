@@ -1,5 +1,5 @@
 obj-m := reference.o
-reference-y := reference_main.o stub.o
+reference-y := reference_main.o
 
 ccflags-y := $(call cc-option, -fcf-protection=none)
 
