@@ -70,12 +70,50 @@ static int read_kallsyms(void) {
     return 0;
 }
 
+long find_kallsym(char *name) {
+    struct file *file;
+    ssize_t bytes_read;
+    char *line;
+    long addr = 0;
+
+    file = filp_open("/proc/kallsyms", O_RDONLY, 0);
+    if (IS_ERR(file)) {
+        pr_err("Failed to open /proc/kallsyms\n");
+        return PTR_ERR(file);
+    }
+
+    struct seq_file *m = file->private_data;
+
+    int read = _read_file(file);
+
+    while (read > 0) {
+      int i = 0;
+      while (m->buf[i] != '\n') {
+        i++;
+      }
+      m->buf[i] = '\0';
+      pr_info("m->buf: %s\n", m->buf);
+      pr_info("name: %s\n", name);
+      pr_info("m->buf + 19: %s\n", m->buf + 19);
+      if (strcmp(m->buf + 19, name) == 0) {
+        addr = line_to_addr(m->buf);
+        break;
+      }
+      read = _read_file(file);
+    }
+
+    filp_close(file, NULL);
+    kfree(line);
+    return addr;
+}
 
 
 static int driver_entry(void)
 {
   printk(KERN_INFO "Gello, world!\n");
-  read_kallsyms();
+  void *addr = (void *)find_kallsym("trace_call_bpf");
+  pr_info("addr: %px\n", addr);
+  // read_kallsyms();
   return 0;
 }
 
