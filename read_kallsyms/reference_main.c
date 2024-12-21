@@ -88,7 +88,7 @@ long find_kallsym(char *name) {
 
     while (read > 0) {
       int i = 0;
-      while (m->buf[i] != '\n') {
+      while (m->buf[i] != '\n' || m->buf[i] == '\0' || m->buf[i] == '\t') {
         i++;
       }
       m->buf[i] = '\0';
