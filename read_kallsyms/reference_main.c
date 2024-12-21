@@ -15,6 +15,11 @@
 long line_to_addr(char *line);
 long find_kallsym(char *name);
 
+
+long line_to_addr(char *line) {
+    return simple_strtoul(line, NULL, 16);
+}
+
 static int _read_file(struct file *file) {
   struct seq_file *m = file->private_data;
 
@@ -35,10 +40,6 @@ static int _read_file(struct file *file) {
   mutex_unlock(&m->lock);
 
   return m->count;
-}
-
-long line_to_addr(char *line) {
-    return simple_strtoul(line, NULL, 16);
 }
 
 long find_kallsym(char *name) {
