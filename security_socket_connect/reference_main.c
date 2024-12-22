@@ -8,13 +8,14 @@
 long line_to_addr(char *line);
 long find_kallsym(char *name);
 int lde_get_length(const void *p);
-void original_security_socket_connect(void);
+int original_security_socket_connect(struct socket *sock, struct sockaddr *address, int addrlen);
 unsigned int hook_security_socket_connect(struct socket *sock, struct sockaddr *address, int addrlen);
 long run_hook(void * addr, int len);
 long write_kernel(void * addr, int len, long (*fn)(void *, int));
 int _run(void *data);
 long hook_reset(void *data, int len);
 int _hook_reset(void *data);
+int ORIG_LEN = 0;
 
 int * _bpf_prog_active;
 
@@ -117,23 +118,19 @@ long find_kallsym(char *name) {
     return addr;
 }
 
-int lde_get_length(const void *p) {
-  struct insn insn;
-
-  typeof(insn_init) *insn_init = (typeof(insn_init))find_kallsym("insn_init");
-  typeof(insn_get_length) *insn_get_length = (typeof(insn_get_length))find_kallsym("insn_get_length");
-  printk(KERN_INFO "insn_init: %px\n", insn_init);
-  printk(KERN_INFO "insn_get_length: %px\n", insn_get_length);
-
-  insn_init(&insn, p, 64, 1);
-  insn_get_length(&insn);
-  return insn.length;
-}
-
-void original_security_socket_connect() {
+int original_security_socket_connect(
+  struct socket *sock,
+  struct sockaddr *address,
+  int addrlen
+) {
   asm(".rept 0x80\n.byte 0\n.endr\n");
+  return 0;
 }
 
+void inet_ntoa(struct in_addr in, char *buf) {
+  unsigned char *bytes = (unsigned char *)&in;
+  sprintf(buf, "%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
+}
 
 unsigned int hook_security_socket_connect(
   struct socket *sock,
@@ -143,9 +140,35 @@ unsigned int hook_security_socket_connect(
   printk(KERN_INFO "hook_security_socket_connect\n");
   printk(KERN_INFO "sock: %px\n", sock);
   printk(KERN_INFO "address: %px\n", address);
+  printk(KERN_INFO "address->sa_family: %d\n", address->sa_family);
+
+  switch (address->sa_family) {
+    case AF_INET:
+      printk(KERN_INFO "AF_INET\n");
+
+      char ip[256];
+      struct sockaddr_in *addr_in = (struct sockaddr_in *)address;
+      inet_ntoa(addr_in->sin_addr, ip);
+      printk(KERN_INFO "ip: %s\n", ip);
+
+      break;
+    case AF_INET6:
+      printk(KERN_INFO "AF_INET6\n");
+      break;
+    case AF_UNIX:
+      printk(KERN_INFO "AF_UNIX\n");
+      break;
+    case AF_UNSPEC:
+      printk(KERN_INFO "AF_UNSPEC\n");
+      break;
+    default:
+      printk(KERN_INFO "default\n");
+      break;
+  }
+
   printk(KERN_INFO "addrlen: %d\n", addrlen);
 
-  return 0;
+  return (original_security_socket_connect + ORIG_LEN)(sock, address, addrlen);
 }
 
 long write_kernel(void * addr, int len, long (*fn)(void *, int)) {
@@ -171,25 +194,28 @@ long write_kernel(void * addr, int len, long (*fn)(void *, int)) {
 	return res;
 }
 
-int ORIG_LEN = 0;
 
 long run_hook(void * addr, int len ) {
   ORIG_LEN = len;
 
-  for (int i = 0; i < len; i++) {
+  for (int i = 0; i < 20; i++) {
     printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)addr)[i]);
   }
-  for (int i = 0; i < len + 6; i++) {
+  for (int i = 0; i < 20; i++) {
     printk(KERN_INFO "pre orig [%d]: 0x%02x ", i, ((unsigned char *)original_security_socket_connect)[i]);
   }
 
   memcpy(original_security_socket_connect, addr, len);
   x86_put_jmp(original_security_socket_connect + len, original_security_socket_connect + len, addr + len);
 
-  for (int i = 0; i < len + 6; i++) {
+  for (int i = 0; i < 20; i++) {
     printk(KERN_INFO "post [%d]: 0x%02x ", i, ((unsigned char *)original_security_socket_connect)[i]);
   }
   x86_put_jmp(addr, addr, hook_security_socket_connect);
+
+  for (int i = 0; i < 20; i++) {
+    printk(KERN_INFO "addr [%d]: 0x%02x ", i, ((unsigned char *)addr)[i]);
+  }
 
   return 0;
 }
@@ -210,6 +236,19 @@ int __run(void *data) {
   return 0;
 }
 
+int lde_get_length(const void *p) {
+  struct insn insn;
+
+  typeof(insn_init) *insn_init = (typeof(insn_init))find_kallsym("insn_init");
+  typeof(insn_get_length) *insn_get_length = (typeof(insn_get_length))find_kallsym("insn_get_length");
+  printk(KERN_INFO "insn_init: %px\n", insn_init);
+  printk(KERN_INFO "insn_get_length: %px\n", insn_get_length);
+
+  insn_init(&insn, p, 64, 1);
+  insn_get_length(&insn);
+  return insn.length;
+
+}
 
 static int driver_entry(void)
 {
@@ -225,7 +264,6 @@ static int driver_entry(void)
   int len = lde_get_length((void *)addr);
   printk(KERN_INFO "security_socket_connect len: %d\n", len);
   while (len < 5) {
-    printk(KERN_INFO "security_socket_connect len: %d\n", len);
     len += lde_get_length((void *)(addr + len));
   }
   printk(KERN_INFO "security_socket_connect len: %d\n", len);
