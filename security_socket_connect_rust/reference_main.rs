@@ -29,6 +29,7 @@ extern "C" {
     fn filp_close(f: *mut file, f2: *mut file);
     fn mutex_lock(m: &mut mutex);
     fn mutex_unlock(m: &mut mutex);
+    fn __kmalloc(size: usize, flags: i32) -> *mut u8;
 }
 
 
@@ -119,15 +120,23 @@ fn x86_put_jmp(a: *mut u8, f: *mut u8, t: *mut u8) {
     }
 }
 
+static mut buff: [u8; 4096] = [0; 4096];
+
 fn _read_file(file: *mut file) -> u32 {
     unsafe {
         let mut m: *mut seq_file = (*file).private_data as *mut seq_file;
+        _printk("m: %px\n\0".as_ptr() as *const i8, m as usize);
         mutex_lock(&mut (*m).lock);
+        _printk("mutex locked\n\0".as_ptr() as *const i8);
 
         if (*m).buf == 0 as *mut i8 {
-            (*m).buf = __kmalloc(4096, 0) as *mut i8;
+            (*m).buf = buff.as_mut_ptr() as *mut i8;
+                // __kmalloc(4096, 0) as *mut i8;
+
             (*m).size = 4096;
         }
+
+        _printk("m->buf: %llx\n\0".as_ptr() as *const i8, (*m).buf as usize);
 
         let start = match (*(*m).op).start {
             Some(f) => f,
@@ -158,6 +167,7 @@ fn _read_file(file: *mut file) -> u32 {
 fn read_kallsym(name: *const i8) -> usize {
     unsafe {
         let mut f: *mut file = filp_open("/proc/kallsyms\0".as_ptr() as *const i8, 0, 0);
+        _printk("f: %llx\n\0".as_ptr() as *const i8, f as usize);
         if f.is_null() {
             _printk("Failed to open /proc/kallsyms\n\0".as_ptr() as *const i8);
             return 0;
@@ -209,6 +219,17 @@ fn read_kallsym(name: *const i8) -> usize {
     }
 }
 
+// fn inet_ntoa(addr: *mut in_addr, buf: *mut i8) -> *mut i8 {
+//     unsafe {
+//         let addr = (*addr).s_addr;
+//         let a = (addr >> 0) & 0xff;
+//         let b = (addr >> 8) & 0xff;
+//         let c = (addr >> 16) & 0xff;
+//         let d = (addr >> 24) & 0xff;
+//         let len = snprintf(buf, 16, "%d.%d.%d.%d".as_ptr() as *const i8, a, b, c, d);
+//         buf
+//     }
+// }
 
 
 impl kernel::Module for ReferenceMain {
