@@ -1,0 +1,31 @@
+# Use Fedora as base image
+FROM fedora:41
+
+ARG KERNEL_VERSION=6.11.11-300.fc41.x86_64
+
+# Install required packages
+RUN dnf install -y \
+    dnf-plugins-core \
+    && dnf install -y \
+    kernel-devel \
+    kernel-headers \
+    gcc \
+    make \
+    && dnf clean all
+
+# Create build directory
+WORKDIR /build
+
+# Copy source files
+COPY reference_main.c .
+COPY Kbuild .
+COPY Makefile .
+
+# Download specific kernel version, from https://koji.fedoraproject.org/koji/packageinfo?packageID=8
+RUN curl --output kernel-devel-6.11.11-300.fc41.x86_64.rpm https://kojipkgs.fedoraproject.org//packages/kernel/6.11.11/300.fc41/x86_64/kernel-devel-6.11.11-300.fc41.x86_64.rpm
+RUN yum install -y kernel-devel-6.11.11-300.fc41.x86_64.rpm
+
+# Build the module
+RUN make KDIR=/usr/src/kernels/6.11.11-300.fc41.x86_64
+
+# The module will be available at /build/reference.ko
