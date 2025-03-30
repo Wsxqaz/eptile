@@ -1,10 +1,24 @@
 # eptile
 
-parrot of [reptile](https://github.com/f0rb1dd3n/Reptile) in rust
+linux rootkit examples
 
-# kernel module build
+## security_socket_connect
 
-to build module via the linux kernel bindings see [kernel-via-bindings](./kernel-via-bindings/README.md)
+This example demonstrates a Linux kernel module that hooks the `security_socket_connect` LSM hook to intercept and monitor network connections. The module:
+
+- Uses direct function hooking to override the security hook
+- Inspects socket connection details including IP addresses and address families (IPv4, IPv6, Unix sockets)
+- Allows connections to 1.1.1.1 while passing other connections through to the original security hook
+- Safely handles memory protection by temporarily disabling write protection and CET
+- Includes debug logging and proper cleanup on module unload
+
+The code shows techniques for:
+- Finding kernel symbols at runtime
+- Instruction length decoding for safe function hooking
+- Memory protection management
+- Socket address parsing and inspection
+- LSM hook interception
+
 
 # references
 
